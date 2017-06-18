@@ -1,7 +1,5 @@
 package org.crpalmer.mashcontroller;
 
-import android.util.Log;
-
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -20,7 +18,7 @@ public class BrewBossConnection {
 
     private static final String HEARTBEAT_CMD = "01";
     private static final String HEATER_POWER_CMD = "02";
-    private static final String PUMP_ENABLED_CMD = "03";
+    private static final String PUMP_ON_CMD = "03";
     private static final String TRIGGER_ALARM_CMD = "04";
     private static final String TEMPERATURE_UNIT_CMD = "06";
 
@@ -84,8 +82,8 @@ public class BrewBossConnection {
         sendCommand(HEATER_POWER_CMD + nf.format(power));
     }
 
-    public void setPumpEnabled(boolean isEnabled) throws BrewBossConnectionException {
-        sendCommand(PUMP_ENABLED_CMD + (isEnabled ? "1" : "0"));
+    public void setPumpOn(boolean isPumpOn) throws BrewBossConnectionException {
+        sendCommand(PUMP_ON_CMD + (isPumpOn ? "1" : "0"));
     }
 
     public void setTemperatureUnit(boolean isF) throws BrewBossConnectionException {

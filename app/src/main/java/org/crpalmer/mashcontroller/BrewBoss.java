@@ -41,8 +41,8 @@ public class BrewBoss {
         return state.isPumpOn();
     }
 
-    public void setPumpEnabled(boolean isEnabled) throws BrewBossConnectionException {
-        connection.setPumpEnabled(isEnabled);
+    public void setPumpOn(boolean isPumpOn) throws BrewBossConnectionException {
+        connection.setPumpOn(isPumpOn);
     }
 
     public void heatTo(double temperature) {
