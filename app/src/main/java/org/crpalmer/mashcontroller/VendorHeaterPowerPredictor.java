@@ -12,14 +12,19 @@ public class VendorHeaterPowerPredictor implements HeaterPowerPredictor {
     private static final int MAINTAIN_POWER = 25;
 
     private boolean isMaintaining;
+    private double targetTemperature;
 
     @Override
-    public int predict(double currentTemperature, double targetTemperature) {
+    public synchronized void start(double targetTemperature) {
+        isMaintaining = false;
+        this.targetTemperature = targetTemperature;
+    }
+
+    @Override
+    public synchronized int predict(double currentTemperature) {
         if (currentTemperature < targetTemperature - DELTA_T1) {
-            isMaintaining = false;
             return 100;
         } else if (currentTemperature < targetTemperature - DELTA_T2) {
-            isMaintaining = false;
             return SLOW_POWER;
         } else if (currentTemperature < targetTemperature) {
             return isMaintaining ? MAINTAIN_POWER : LOW_POWER;

@@ -11,6 +11,7 @@ public class BrewBoss {
     private final BrewBossConnection connection = new BrewBossConnection();
     private final BrewBossState state = new BrewBossState(connection);
 
+    private HeaterPowerPredictor predictor = new HybridHeaterPowerPredictor();
     private double targetTemperature;
 
     public boolean isConnected() {
@@ -26,7 +27,10 @@ public class BrewBoss {
     }
 
     public synchronized void setTargetTemperature(double temperature) {
-        targetTemperature = temperature;
+        if (targetTemperature != temperature) {
+            targetTemperature = temperature;
+            predictor.start(temperature);
+        }
     }
 
     public int getHeaterPower() {
@@ -55,7 +59,19 @@ public class BrewBoss {
     private final Thread thread = new Thread() {
         @Override
         public void run() {
-
+            while (true) {
+                if (targetTemperature > 0) {
+                    int power = predictor.predict(state.getTemperature());
+                    if (power != state.getHeaterPower()) {
+                        try {
+                            connection.setHeaterPower(power);
+                        } catch (BrewBossConnectionException e) {
+                            // TODO report this somehow
+                        }
+                    }
+                }
+                pause();
+            }
         }
     };
 

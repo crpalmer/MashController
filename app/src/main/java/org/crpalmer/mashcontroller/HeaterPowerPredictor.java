@@ -5,5 +5,6 @@ package org.crpalmer.mashcontroller;
  */
 
 public interface HeaterPowerPredictor {
-    public int predict(double currentTemperature, double targetTemperature);
+    public void start(double targetTemperature);
+    public int predict(double currentTemperature);
 }
