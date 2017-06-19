@@ -62,7 +62,7 @@ public class BrewBossConnection {
                     resetConnectionLocked();
                 }
             }
-            throw new BrewBossConnectionException(TAG, "Failed to write data to [" + HOST + ":" + PORT, e);
+            throw new BrewBossConnectionException(TAG, "Failed to write data to [" + HOST + ":" + PORT + "]", e);
         }
     }
 
@@ -99,9 +99,9 @@ public class BrewBossConnection {
                 connectionCount++;
             }
         } catch (UnknownHostException e) {
-            throw new BrewBossConnectionException(TAG, "Couldn't connect to [" + host + ":" + port, e);
+            throw new BrewBossConnectionException(TAG, "Couldn't connect to [" + host + ":" + port + "]", e);
         } catch (IOException e) {
-            throw new BrewBossConnectionException(TAG, "Couldn't connect to [" + host + ":" + port, e);
+            throw new BrewBossConnectionException(TAG, "Couldn't connect to [" + host + ":" + port + "]", e);
         }
     }
 
@@ -124,7 +124,7 @@ public class BrewBossConnection {
             out.flush();
         } catch (IOException e) {
             resetConnectionLocked();
-            throw new BrewBossConnectionException(TAG, "Failed to write data to [" + HOST + ":" + PORT, e);
+            throw new BrewBossConnectionException(TAG, "Failed to write data to [" + HOST + ":" + PORT + "]", e);
         }
     }
 
