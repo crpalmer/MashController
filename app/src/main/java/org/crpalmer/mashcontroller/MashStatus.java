@@ -9,17 +9,22 @@ import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.RadioGroup.OnCheckedChangeListener;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.RadioGroup;
 import android.widget.Toast;
-import android.widget.ToggleButton;
 
 public class MashStatus extends AppCompatActivity {
 
     private final BrewBoss brewBoss = new BrewBoss();
     private View top;
-    private DecimalInput targetTemperatureInput;
+    private RadioGroup brewMode;
     private BrewButton pumpButton;
+    private BrewButton heaterButton;
+    private EditText actualTemperature;
+    private DecimalInput targetTemperature;
+    private DecimalInput heaterPower;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,16 +41,30 @@ public class MashStatus extends AppCompatActivity {
             }
         });
 
-        targetTemperatureInput = new DecimalInput(R.id.targetTemperature, R.id.targetTempOkay, R.id.targetTempCancel) {
+        actualTemperature = (EditText) findViewById(R.id.actualTemperature);
+        actualTemperature.setText(formatTemperature(brewBoss.getTemperature()));
+
+        targetTemperature = new DecimalInput(R.id.targetTemperature, R.id.targetTempOkay, R.id.targetTempCancel) {
             @Override
             public void onValueChanged(double value) {
                 brewBoss.setTargetTemperature(value);
-                Log.e("CRP", "temperature set to " + value + " = " + brewBoss.getTargetTemperature());
             }
 
             @Override
             public String getCurrentValue() {
-                return String.format("%.1f", brewBoss.getTargetTemperature());
+                return formatTemperature(brewBoss.getTargetTemperature());
+            }
+        };
+
+        heaterPower = new DecimalInput(R.id.heaterPower, R.id.heaterPowerOkay, R.id.heaterPowerCancel) {
+            @Override
+            public void onValueChanged(double value) {
+                brewBoss.setTargetTemperature(value);
+            }
+
+            @Override
+            public String getCurrentValue() {
+                return formatTemperature(brewBoss.getTargetTemperature());
             }
         };
 
@@ -57,10 +76,24 @@ public class MashStatus extends AppCompatActivity {
             }
         };
         pumpButton.setVisualState(brewBoss.isPumpOn());
+
+        heaterButton = new BrewButton(R.id.heaterOnButton) {
+            @Override
+            public void changeState(boolean newState) throws BrewBossConnectionException {
+                setVisualState(newState);
+                brewBoss.setPumpOn(newState);
+            }
+        };
+        heaterButton.setVisualState(brewBoss.isHeaterOn());
+
+        // Do brew mode last because it changes other views
+        brewMode = (RadioGroup) findViewById(R.id.brewMode);
+        brewMode.setOnCheckedChangeListener(brewModeListener);
+        brewMode.check(brewBoss.isAutomaticMode() ? R.id.automaticMode : R.id.manualMode);
     }
 
     private void hideSoftKeyboard(View view) {
-        InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
     }
 
@@ -80,13 +113,14 @@ public class MashStatus extends AppCompatActivity {
             editText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
                 @Override
                 public void onFocusChange(View view, boolean focussed) {
-                    if (! focussed) {
+                    if (!focussed) {
                         resetValue();
                     }
                     okayButton.setVisibility(focussed ? View.VISIBLE : View.INVISIBLE);
                     cancelButton.setVisibility(focussed ? View.VISIBLE : View.INVISIBLE);
                 }
             });
+            editText.setText(getCurrentValue());
 
             okayButton.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -113,7 +147,13 @@ public class MashStatus extends AppCompatActivity {
             editText.setText(getCurrentValue());
         }
 
+        private void setEnabled(boolean enabled) {
+            editText.setFocusable(enabled);
+            editText.setFocusableInTouchMode(enabled);
+        }
+
         public abstract void onValueChanged(double value);
+
         public abstract String getCurrentValue();
     }
 
@@ -135,13 +175,27 @@ public class MashStatus extends AppCompatActivity {
         @Override
         public void onClick(View view) {
             try {
-                changeState(! currentState);
+                changeState(!currentState);
             } catch (BrewBossConnectionException e) {
                 Toast.makeText(getApplicationContext(), e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
             }
         }
 
         public abstract void changeState(boolean newState) throws BrewBossConnectionException;
+    }
 
+    private OnCheckedChangeListener brewModeListener = new OnCheckedChangeListener() {
+        @Override
+        public void onCheckedChanged(RadioGroup radioGroup, int id) {
+            boolean automatic = id == R.id.automaticMode;
+            Log.e("CRP", "onCheckedChanged " + id + "automatic? " + automatic);
+            brewBoss.setAutomaticMode(automatic);
+            heaterPower.setEnabled(automatic ? false : true);
+            targetTemperature.setEnabled(automatic ? true : false);
+        }
+    };
+
+    private static final String formatTemperature(double temperature) {
+        return String.format("%.1f", temperature);
     }
 }
