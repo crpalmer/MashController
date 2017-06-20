@@ -25,13 +25,10 @@
                 android:text="Pump"
                 android:textAppearance="@android:style/TextAppearance.Material.Large" />
 
-            <ToggleButton
+            <Button
                 android:id="@+id/pumpOnButton"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="ToggleButton"
-                android:textOff="Off"
-                android:textOn="On" />
+                android:layout_height="wrap_content" />
         </LinearLayout>
 
         <LinearLayout
