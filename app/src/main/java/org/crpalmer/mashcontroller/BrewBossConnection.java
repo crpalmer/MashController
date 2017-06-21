@@ -7,6 +7,8 @@ import java.io.InputStreamReader;
 import java.net.Socket;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * BrewBossConnection
@@ -34,6 +36,8 @@ public class BrewBossConnection {
     private BufferedReader in;
     private long connectionCount;
 
+    private final List<BrewBossStateChangeListener> listeners = new LinkedList<>();
+
     public BrewBossConnection() {
         this(HOST, PORT);
     }
@@ -41,6 +45,21 @@ public class BrewBossConnection {
     public BrewBossConnection(String host, int port) {
         this.host = host;
         this.port = port;
+    }
+
+    public void addStateChangeListener(BrewBossStateChangeListener l) {
+        synchronized (listeners) {
+            listeners.add(l);
+            l.onConnectionStateChanged(isConnected());
+        }
+    }
+
+    private void notifyListeners(boolean isConnected) {
+        synchronized(listeners) {
+            for (BrewBossStateChangeListener l : listeners) {
+                l.onConnectionStateChanged(isConnected);
+            }
+        }
     }
 
     public synchronized boolean isConnected() {
@@ -98,6 +117,7 @@ public class BrewBossConnection {
                 out = new BufferedOutputStream(socket.getOutputStream());
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 connectionCount++;
+                notifyListeners(true);
             }
         } catch (IOException e) {
             throw new BrewBossConnectionException(TAG, "Couldn't connect to [" + host + ":" + port + "]", e);
@@ -106,6 +126,7 @@ public class BrewBossConnection {
 
     private void resetConnectionLocked() {
         if (socket != null) {
+            notifyListeners(false);
             try {
                 socket.close();
             } catch (IOException ignored) {

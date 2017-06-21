@@ -5,6 +5,8 @@ package org.crpalmer.mashcontroller;
  */
 
 public interface BrewBossStateChangeListener {
+    void onConnectionStateChanged(boolean connected);
+
     void onHeaterChanged(boolean on, int power);
 
     void onPumpChanged(boolean on);

@@ -100,6 +100,7 @@ public class BrewBoss {
     }
 
     public void addStateChangeListener(BrewBossStateChangeListener listener) {
+        connection.addStateChangeListener(listener);
         state.addStateChangeListener(listener);
     }
 

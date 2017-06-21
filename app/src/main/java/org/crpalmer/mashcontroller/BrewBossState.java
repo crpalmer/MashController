@@ -73,6 +73,9 @@ public class BrewBossState {
     public void addStateChangeListener(BrewBossStateChangeListener l) {
         synchronized (listeners) {
             listeners.add(l);
+            l.onHeaterChanged(isHeaterOn(), getHeaterPower());
+            l.onPumpChanged(isPumpOn());
+            l.onTemperatureChanged(getTemperature());
         }
     }
 
@@ -83,15 +86,17 @@ public class BrewBossState {
 
         // TODO: figure out the format of this string
         if (temperatureChanged || heaterChanged || pumpChanged) {
-            for (BrewBossStateChangeListener l : listeners) {
-                if (heaterChanged) {
-                    l.onHeaterChanged(isHeaterOn(), getHeaterPower());
-                }
-                if (pumpChanged) {
-                    l.onPumpChanged(isPumpOn());
-                }
-                if (temperatureChanged) {
-                    l.onTemperatureChanged(getTemperature());
+            synchronized(listeners) {
+                for (BrewBossStateChangeListener l : listeners) {
+                    if (heaterChanged) {
+                        l.onHeaterChanged(isHeaterOn(), getHeaterPower());
+                    }
+                    if (pumpChanged) {
+                        l.onPumpChanged(isPumpOn());
+                    }
+                    if (temperatureChanged) {
+                        l.onTemperatureChanged(getTemperature());
+                    }
                 }
             }
         }

@@ -11,12 +11,14 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.RadioGroup;
 import android.widget.RadioGroup.OnCheckedChangeListener;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class MashStatus extends AppCompatActivity implements BrewBossStateChangeListener {
 
     private final BrewBoss brewBoss = new BrewBoss();
     private View top;
+    private TextView connectionStatus;
     private BrewButton pumpButton;
     private BrewButton heaterButton;
     private EditText actualTemperature;
@@ -60,8 +62,8 @@ public class MashStatus extends AppCompatActivity implements BrewBossStateChange
             }
         });
 
+        connectionStatus = (TextView) findViewById(R.id.connectionStatus);
         actualTemperature = (EditText) findViewById(R.id.actualTemperature);
-        actualTemperature.setText(formatTemperature(brewBoss.getTemperature(), false));
 
         targetTemperature = new DecimalInput(R.id.targetTemperature, R.id.targetTempOkay, R.id.targetTempCancel) {
             @Override
@@ -93,7 +95,6 @@ public class MashStatus extends AppCompatActivity implements BrewBossStateChange
                 brewBoss.setPumpOn(newState);
             }
         };
-        pumpButton.setVisualState(brewBoss.isPumpOn());
 
         heaterButton = new BrewButton(R.id.heaterOnButton) {
             @Override
@@ -101,7 +102,6 @@ public class MashStatus extends AppCompatActivity implements BrewBossStateChange
                 brewBoss.setHeaterOn(newState);
             }
         };
-        heaterButton.setVisualState(brewBoss.isHeaterOn());
 
         // Do brew mode last because it changes other views
         RadioGroup brewMode = (RadioGroup) findViewById(R.id.brewMode);
@@ -114,6 +114,12 @@ public class MashStatus extends AppCompatActivity implements BrewBossStateChange
     private void hideSoftKeyboard(View view) {
         InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+    }
+
+    @Override
+    public void onConnectionStateChanged(boolean connected) {
+        connectionStatus.setTextColor(connected ? Color.GREEN : Color.RED);
+        connectionStatus.setText(connected ? "CONNECTED" : "DISCONNECTED");
     }
 
     @Override
