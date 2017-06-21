@@ -42,7 +42,7 @@ public class MashStatus extends AppCompatActivity {
         });
 
         actualTemperature = (EditText) findViewById(R.id.actualTemperature);
-        actualTemperature.setText(formatTemperature(brewBoss.getTemperature()));
+        actualTemperature.setText(formatTemperature(brewBoss.getTemperature(), false));
 
         targetTemperature = new DecimalInput(R.id.targetTemperature, R.id.targetTempOkay, R.id.targetTempCancel) {
             @Override
@@ -196,8 +196,12 @@ public class MashStatus extends AppCompatActivity {
     };
 
     private static final String formatTemperature(double temperature) {
+        return formatTemperature(temperature, true);
+    }
+
+    private static final String formatTemperature(double temperature, boolean pretty) {
         String result = String.format("%.1f", temperature);
-        if (result.endsWith(".0")) {
+        if (pretty && result.endsWith(".0")) {
             return result.substring(0, result.length() - 2);
         } else {
             return result;
