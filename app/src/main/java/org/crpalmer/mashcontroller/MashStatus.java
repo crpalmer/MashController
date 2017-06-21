@@ -150,6 +150,7 @@ public class MashStatus extends AppCompatActivity {
         private void setEnabled(boolean enabled) {
             editText.setFocusable(enabled);
             editText.setFocusableInTouchMode(enabled);
+            editText.setBackgroundColor(enabled ? Color.TRANSPARENT : Color.LTGRAY);
         }
 
         public abstract void onValueChanged(double value);
@@ -167,7 +168,7 @@ public class MashStatus extends AppCompatActivity {
         }
 
         public void setVisualState(boolean enabled) {
-            button.setBackgroundColor(enabled ? Color.GREEN : Color.LTGRAY);
+            button.setBackgroundColor(enabled ? Color.GREEN : Color.YELLOW);
             button.setText(enabled ? "ON" : "OFF");
             currentState = enabled;
         }
