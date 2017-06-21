@@ -30,6 +30,16 @@ public class BrewBossState {
     private final AtomicBoolean pumpOn = new AtomicBoolean();
 
     private final List<BrewBossStateChangeListener> listeners = new LinkedList<>();
+    private final Handler handler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case UPDATE_STATE_MSG:
+                    updateState();
+                    break;
+            }
+        }
+    };
 
     BrewBossState(BrewBossConnection connection) {
         this.connection = connection;
@@ -48,16 +58,16 @@ public class BrewBossState {
         return automaticMode.get();
     }
 
+    public void setAutomaticMode(boolean on) {
+        automaticMode.set(on);
+    }
+
     public boolean isHeaterOn() {
         return heaterOn.get();
     }
 
     public boolean isPumpOn() {
         return pumpOn.get();
-    }
-
-    public void setAutomaticMode(boolean on) {
-        automaticMode.set(on);
     }
 
     public void addStateChangeListener(BrewBossStateChangeListener l) {
@@ -102,15 +112,4 @@ public class BrewBossState {
     private void scheduleUpdateState() {
         handler.sendMessageDelayed(handler.obtainMessage(UPDATE_STATE_MSG), UPDATE_STATE_MS);
     }
-
-    private final Handler handler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case UPDATE_STATE_MSG:
-                    updateState();
-                    break;
-            }
-        }
-    };
 }

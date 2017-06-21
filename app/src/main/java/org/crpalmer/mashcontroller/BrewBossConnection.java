@@ -10,7 +10,7 @@ import java.text.NumberFormat;
 
 /**
  * BrewBossConnection
- *
+ * <p>
  * Communication channel to/from the brew boss controller
  */
 

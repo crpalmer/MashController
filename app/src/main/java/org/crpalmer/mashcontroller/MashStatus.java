@@ -2,15 +2,15 @@ package org.crpalmer.mashcontroller;
 
 import android.content.Context;
 import android.graphics.Color;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
-import android.widget.RadioGroup.OnCheckedChangeListener;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.RadioGroup;
+import android.widget.RadioGroup.OnCheckedChangeListener;
 import android.widget.Toast;
 
 public class MashStatus extends AppCompatActivity implements BrewBossStateChangeListener {
@@ -22,6 +22,28 @@ public class MashStatus extends AppCompatActivity implements BrewBossStateChange
     private EditText actualTemperature;
     private DecimalInput targetTemperature;
     private DecimalInput heaterPower;
+    private OnCheckedChangeListener brewModeListener = new OnCheckedChangeListener() {
+        @Override
+        public void onCheckedChanged(RadioGroup radioGroup, int id) {
+            boolean automatic = id == R.id.automaticMode;
+            brewBoss.setAutomaticMode(automatic);
+            heaterPower.setEnabled(!automatic);
+            targetTemperature.setEnabled(automatic);
+        }
+    };
+
+    private static String formatTemperature(double temperature) {
+        return formatTemperature(temperature, true);
+    }
+
+    private static String formatTemperature(double temperature, boolean pretty) {
+        String result = String.format("%.1f", temperature);
+        if (pretty && result.endsWith(".0")) {
+            return result.substring(0, result.length() - 2);
+        } else {
+            return result;
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -196,28 +218,5 @@ public class MashStatus extends AppCompatActivity implements BrewBossStateChange
         }
 
         public abstract void changeState(boolean newState) throws BrewBossConnectionException;
-    }
-
-    private OnCheckedChangeListener brewModeListener = new OnCheckedChangeListener() {
-        @Override
-        public void onCheckedChanged(RadioGroup radioGroup, int id) {
-            boolean automatic = id == R.id.automaticMode;
-            brewBoss.setAutomaticMode(automatic);
-            heaterPower.setEnabled(!automatic);
-            targetTemperature.setEnabled(automatic);
-        }
-    };
-
-    private static String formatTemperature(double temperature) {
-        return formatTemperature(temperature, true);
-    }
-
-    private static String formatTemperature(double temperature, boolean pretty) {
-        String result = String.format("%.1f", temperature);
-        if (pretty && result.endsWith(".0")) {
-            return result.substring(0, result.length() - 2);
-        } else {
-            return result;
-        }
     }
 }

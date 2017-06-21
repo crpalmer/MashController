@@ -2,7 +2,7 @@ package org.crpalmer.mashcontroller;
 
 /**
  * PIDHeaterPowerPredictor
- *
+ * <p>
  * Use a PID algorithm to predict the heater power.
  */
 
@@ -29,7 +29,7 @@ public class PIDHeaterPowerPredictor implements HeaterPowerPredictor {
         long now = System.currentTimeMillis();
         double E = targetTemperature - currentTemperature;
         double deltaTemp = lastTemperature > 0 ? currentTemperature - lastTemperature : 0;
-        if (! saturated) {
+        if (!saturated) {
             // In order to prevent windup, only integrate if the process is not saturated
             iTerm = clamp(iTerm + I * E);
         }

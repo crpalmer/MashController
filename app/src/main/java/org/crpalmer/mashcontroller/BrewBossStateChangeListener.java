@@ -6,6 +6,8 @@ package org.crpalmer.mashcontroller;
 
 public interface BrewBossStateChangeListener {
     void onHeaterChanged(boolean on, int power);
+
     void onPumpChanged(boolean on);
+
     void onTemperatureChanged(double temperature);
 }

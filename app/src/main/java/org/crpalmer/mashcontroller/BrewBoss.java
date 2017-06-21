@@ -6,7 +6,7 @@ import android.util.Log;
 
 /**
  * BrewBoss
- *
+ * <p>
  * Interface to the controller.  It allows state inspection and updates to the state.
  */
 
@@ -20,6 +20,15 @@ public class BrewBoss {
 
     private HeaterPowerPredictor predictor;
     private double targetTemperature;
+    private Handler handler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case UPDATE_TEMPERATURE_MSG:
+                    updateTemperature();
+            }
+        }
+    };
 
     public BrewBoss() {
         HeaterPowerPredictor rampingPredictor = new VendorHeaterPowerPredictor();
@@ -32,51 +41,19 @@ public class BrewBoss {
         return state.getHeaterPower();
     }
 
+    public void setHeaterPower(int percent) throws BrewBossConnectionException {
+        if (percent < 0 || percent > 100) {
+            throw new IllegalArgumentException("Temperature must be between 0 and 220");
+        }
+        connection.setHeaterPower(percent);
+    }
+
     public double getTemperature() {
         return state.getTemperature();
     }
 
     public synchronized double getTargetTemperature() {
         return targetTemperature;
-    }
-
-    public boolean isAutomaticMode() {
-        return state.isAutomaticMode();
-    }
-
-    public boolean isConnected() {
-        return connection.isConnected();
-    }
-
-    public boolean isHeaterOn() {
-        return state.isHeaterOn();
-    }
-
-    public boolean isPumpOn() {
-        return state.isPumpOn();
-    }
-
-    public void addStateChangeListener(BrewBossStateChangeListener listener) {
-        state.addStateChangeListener(listener);
-    }
-
-    public synchronized void setAutomaticMode(boolean on) {
-        state.setAutomaticMode(on);
-        handler.removeMessages(UPDATE_TEMPERATURE_MSG);
-        if (on) {
-            scheduleUpdateTemperature();
-        }
-    }
-
-    public synchronized void setHeaterOn(boolean on) throws BrewBossConnectionException {
-        connection.setHeaterPower(on ? state.getHeaterPower() : 0);
-    }
-
-    public void setHeaterPower(int percent) throws BrewBossConnectionException {
-        if (percent < 0 || percent > 100) {
-            throw new IllegalArgumentException("Temperature must be between 0 and 220");
-        }
-        connection.setHeaterPower(percent);
     }
 
     public synchronized void setTargetTemperature(double temperature) {
@@ -90,8 +67,40 @@ public class BrewBoss {
         }
     }
 
+    public boolean isAutomaticMode() {
+        return state.isAutomaticMode();
+    }
+
+    public synchronized void setAutomaticMode(boolean on) {
+        state.setAutomaticMode(on);
+        handler.removeMessages(UPDATE_TEMPERATURE_MSG);
+        if (on) {
+            scheduleUpdateTemperature();
+        }
+    }
+
+    public boolean isConnected() {
+        return connection.isConnected();
+    }
+
+    public boolean isHeaterOn() {
+        return state.isHeaterOn();
+    }
+
+    public synchronized void setHeaterOn(boolean on) throws BrewBossConnectionException {
+        connection.setHeaterPower(on ? state.getHeaterPower() : 0);
+    }
+
+    public boolean isPumpOn() {
+        return state.isPumpOn();
+    }
+
     public void setPumpOn(boolean isPumpOn) throws BrewBossConnectionException {
         connection.setPumpOn(isPumpOn);
+    }
+
+    public void addStateChangeListener(BrewBossStateChangeListener listener) {
+        state.addStateChangeListener(listener);
     }
 
     private void scheduleUpdateTemperature() {
@@ -117,14 +126,4 @@ public class BrewBoss {
             scheduleUpdateTemperature();
         }
     }
-
-    private Handler handler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case UPDATE_TEMPERATURE_MSG:
-                    updateTemperature();
-            }
-        }
-    };
 }
