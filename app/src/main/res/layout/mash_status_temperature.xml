@@ -5,7 +5,7 @@
     android:layout_gravity="center_horizontal"
     android:layout_marginTop="10dp"
     android:orientation="horizontal"
-    android:paddingLeft="32dp">
+    android:paddingStart="32dp">
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -61,7 +61,6 @@
                 android:orientation="vertical">
 
                 <TextView
-                    android:id="@+id/targetTempView"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
@@ -90,6 +89,7 @@
 
         <ImageButton
             android:id="@+id/targetTempCancel"
+            android:contentDescription="@string/cancel_button_description"
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:layout_gravity="bottom"
@@ -97,6 +97,7 @@
 
         <ImageButton
             android:id="@+id/targetTempOkay"
+            android:contentDescription="@string/okay_button_description"
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:layout_gravity="bottom"

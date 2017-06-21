@@ -1,5 +1,7 @@
 <resources>
     <string name="app_name">Mash Controller</string>
+    <string name="cancel_button_description">Cancel the editing</string>
+    <string name="okay_button_description">Commit the change</string>
 
     <!-- Mash Status -->
     <string name="connection_status">Connection Status:</string>
