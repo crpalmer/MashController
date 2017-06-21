@@ -1,5 +1,7 @@
 package org.crpalmer.mashcontroller;
 
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 
 import java.util.LinkedList;
@@ -13,6 +15,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class BrewBossState {
     private static final String TAG = "BrewBossState";
+    private static final int UPDATE_STATE_MSG = 1;
+    private static final int UPDATE_STATE_MS = 1000;
 
     private final BrewBossConnection connection;
 
@@ -26,16 +30,25 @@ public class BrewBossState {
 
     BrewBossState(BrewBossConnection connection) {
         this.connection = connection;
+        scheduleUpdateState();
     }
 
     public int getHeaterPower() {
         return heaterPower.get();
     }
+
     public double getTemperature() {
         return temperatureTimes100.get() / 100.0;
     }
-    public boolean isAutomaticMode() { return automaticMode.get(); }
-    public boolean isHeaterOn() { return heaterOn.get(); }
+
+    public boolean isAutomaticMode() {
+        return automaticMode.get();
+    }
+
+    public boolean isHeaterOn() {
+        return heaterOn.get();
+    }
+
     public boolean isPumpOn() {
         return pumpOn.get();
     }
@@ -49,51 +62,38 @@ public class BrewBossState {
     }
 
     public void addStateChangeListener(BrewBossStateChangeListener l) {
-        synchronized(listeners) {
+        synchronized (listeners) {
             listeners.add(l);
         }
     }
 
-    private void updateState(String line) {
-        // TODO: figure out the format of this string
-
-        // NOTE: if heaterOn == true && heaterPower != reported heater power then resend the heater power
-        //       if heaterOn == false && reported heater power > 0 then set heater power to 9
-        // (aka: treat our state as authority)  Is this right? Is this possible?
-    }
-
-    private void pause() {
+    private void updateState() {
         try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            Log.e(TAG, "Sleep interrupted: " + e.getLocalizedMessage());
+            connection.heartBeat();
+            String line = connection.readLine();
+            // TODO: figure out the format of this string
+
+            // NOTE: if heaterOn == true && heaterPower != reported heater power then resend the heater power
+            //       if heaterOn == false && reported heater power > 0 then set heater power to 9
+            // (aka: treat our state as authority)  Is this right? Is this possible?
+        } catch (BrewBossConnectionException e) {
+        } finally {
+            scheduleUpdateState();
         }
     }
 
-    private final Thread heartbeatThread = new Thread() {
+    private void scheduleUpdateState() {
+        handler.sendMessageDelayed(handler.obtainMessage(UPDATE_STATE_MSG), UPDATE_STATE_MS);
+    }
+
+    private Handler handler = new Handler() {
         @Override
-        public void run() {
-            while (true) {
-                try {
-                    connection.heartBeat();
-                } catch (BrewBossConnectionException e) {
-                }
-                pause();
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case UPDATE_STATE_MSG:
+                    updateState();
+                    break;
             }
         }
-    };
-
-    private final Thread readerThread = new Thread() {
-        @Override
-        public void run() {
-            while (true) {
-                try {
-                    updateState(connection.readLine());
-                } catch (BrewBossConnectionException e) {
-                    pause();
-                }
-            }
-        }
-
     };
 }
