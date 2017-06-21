@@ -2,6 +2,8 @@ package org.crpalmer.mashcontroller;
 
 import android.util.Log;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -19,6 +21,8 @@ public class BrewBossState {
     private AtomicBoolean heaterOn = new AtomicBoolean();
     private AtomicInteger heaterPower = new AtomicInteger();
     private AtomicBoolean pumpOn = new AtomicBoolean();
+
+    private List<BrewBossStateChangeListener> listeners = new LinkedList<BrewBossStateChangeListener>();
 
     BrewBossState(BrewBossConnection connection) {
         this.connection = connection;
@@ -42,6 +46,12 @@ public class BrewBossState {
 
     public void setAutomaticMode(boolean on) {
         automaticMode.set(on);
+    }
+
+    public void addStateChangeListener(BrewBossStateChangeListener l) {
+        synchronized(listeners) {
+            listeners.add(l);
+        }
     }
 
     private void updateState(String line) {

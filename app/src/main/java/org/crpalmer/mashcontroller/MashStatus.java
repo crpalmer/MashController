@@ -15,7 +15,7 @@ import android.widget.ImageButton;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 
-public class MashStatus extends AppCompatActivity {
+public class MashStatus extends AppCompatActivity implements BrewBossStateChangeListener {
 
     private final BrewBoss brewBoss = new BrewBoss();
     private View top;
@@ -71,7 +71,6 @@ public class MashStatus extends AppCompatActivity {
         pumpButton = new BrewButton(R.id.pumpOnButton) {
             @Override
             public void changeState(boolean newState) throws BrewBossConnectionException {
-                setVisualState(newState);
                 brewBoss.setPumpOn(newState);
             }
         };
@@ -80,7 +79,6 @@ public class MashStatus extends AppCompatActivity {
         heaterButton = new BrewButton(R.id.heaterOnButton) {
             @Override
             public void changeState(boolean newState) throws BrewBossConnectionException {
-                setVisualState(newState);
                 brewBoss.setPumpOn(newState);
             }
         };
@@ -95,6 +93,22 @@ public class MashStatus extends AppCompatActivity {
     private void hideSoftKeyboard(View view) {
         InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+    }
+
+    @Override
+    public void onHeaterChanged(boolean on, int power) {
+        heaterButton.setVisualState(on);
+        heaterPower.resetValue();
+    }
+
+    @Override
+    public void onPumpChanged(boolean on) {
+        pumpButton.setVisualState(on);
+    }
+
+    @Override
+    public void onTemperatureChanged(double temperature) {
+        actualTemperature.setText(formatTemperature(temperature));
     }
 
     private abstract class DecimalInput {

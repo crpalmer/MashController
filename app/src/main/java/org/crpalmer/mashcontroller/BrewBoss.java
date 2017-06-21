@@ -39,6 +39,10 @@ public class BrewBoss {
         return state.isPumpOn();
     }
 
+    public void addStateChangeListener(BrewBossStateChangeListener listener) {
+        state.addStateChangeListener(listener);
+    }
+
     public synchronized void setAutomaticMode(boolean on) {
         state.setAutomaticMode(on);
         // TODO: Stop the auto updates
@@ -46,15 +50,15 @@ public class BrewBoss {
 
     public synchronized void setHeaterOn(boolean on) throws BrewBossConnectionException {
         connection.setHeaterPower(on ? state.getHeaterPower() : 0);
-        state.setHeaterOn(on);
     }
 
-    public void setHeaterPower(int percent) {
+    public void setHeaterPower(int percent) throws BrewBossConnectionException {
         if (percent < 0 || percent > 100) {
             throw new IllegalArgumentException("Temperature must be between 0 and 220");
         }
-
+        connection.setHeaterPower(percent);
     }
+
     public synchronized void setTargetTemperature(double temperature) {
         if (temperature < 0 || temperature > 220) {
             throw new IllegalArgumentException("Temperature must be between 0 and 220");
