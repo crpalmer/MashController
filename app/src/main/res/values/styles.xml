@@ -8,4 +8,11 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
+    <style name="subtitle" parent="android:style/TextAppearance.Material.Large">
+        <item name="android:background">@color/subTitleBackround</item>
+        <item name="android:paddingBottom">5dp</item>
+        <item name="android:textAlignment">center</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
 </resources>

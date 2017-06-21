@@ -13,9 +13,7 @@
         android:layout_gravity="center_horizontal"
         android:textAlignment="center"
         android:text="Pump"
-        android:textStyle="bold"
-        android:background="@color/subTitleBackround"
-        android:textAppearance="@android:style/TextAppearance.Material.Large" />
+        style="@style/subtitle"/>
 
     <Button
         android:id="@+id/pumpOnButton"

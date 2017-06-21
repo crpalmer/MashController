@@ -11,11 +11,8 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="center_horizontal"
-        android:textAlignment="center"
         android:text="Brew Mode"
-        android:textStyle="bold"
-        android:background="@color/subTitleBackround"
-        android:textAppearance="@android:style/TextAppearance.Material.Large" />
+        style="@style/subtitle" />
 
     <RadioGroup
         android:id="@+id/brewMode"

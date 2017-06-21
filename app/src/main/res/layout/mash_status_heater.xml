@@ -18,9 +18,7 @@
             android:layout_height="match_parent"
             android:layout_gravity="center_horizontal"
             android:text="Heater"
-            android:background="@color/subTitleBackround"
-            android:textAlignment="center"
-            android:textAppearance="@android:style/TextAppearance.Material.Large" />
+            style="@style/subtitle" />
 
         <LinearLayout
             android:layout_width="wrap_content"
