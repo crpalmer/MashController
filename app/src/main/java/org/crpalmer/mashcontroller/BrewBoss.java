@@ -1,5 +1,7 @@
 package org.crpalmer.mashcontroller;
 
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 
 /**
@@ -8,6 +10,9 @@ import android.util.Log;
 
 public class BrewBoss {
     private static final String TAG = "BrewBoss";
+    private static final int UPDATE_TEMPERATURE_MSG = 1;
+    private static final int UPDATE_TEMPEATURE_MS = 900;
+
     private final BrewBossConnection connection = new BrewBossConnection();
     private final BrewBossState state = new BrewBossState(connection);
 
@@ -16,25 +21,35 @@ public class BrewBoss {
     private HeaterPowerPredictor predictor;
     private double targetTemperature;
 
-    public BrewBoss()     {
+    public BrewBoss() {
         predictor = new HybridHeaterPowerPredictor(rampingPredictor, maintainPredictor);
-        thread.start();
+        setAutomaticMode(true);
     }
 
     public int getHeaterPower() {
         return state.getHeaterPower();
     }
+
     public double getTemperature() {
         return state.getTemperature();
     }
+
     public synchronized double getTargetTemperature() {
         return targetTemperature;
     }
-    public boolean isAutomaticMode() { return state.isAutomaticMode(); }
+
+    public boolean isAutomaticMode() {
+        return state.isAutomaticMode();
+    }
+
     public boolean isConnected() {
         return connection.isConnected();
     }
-    public boolean isHeaterOn() { return state.isHeaterOn(); }
+
+    public boolean isHeaterOn() {
+        return state.isHeaterOn();
+    }
+
     public boolean isPumpOn() {
         return state.isPumpOn();
     }
@@ -45,7 +60,10 @@ public class BrewBoss {
 
     public synchronized void setAutomaticMode(boolean on) {
         state.setAutomaticMode(on);
-        // TODO: Stop the auto updates
+        handler.removeMessages(UPDATE_TEMPERATURE_MSG);
+        if (on) {
+            scheduleUpdateTemperature();
+        }
     }
 
     public synchronized void setHeaterOn(boolean on) throws BrewBossConnectionException {
@@ -66,6 +84,7 @@ public class BrewBoss {
         if (targetTemperature != temperature) {
             targetTemperature = temperature;
             predictor.start(temperature);
+            ensureTemperatureUpdateScheduled();
         }
     }
 
@@ -73,39 +92,37 @@ public class BrewBoss {
         connection.setPumpOn(isPumpOn);
     }
 
-    public void heatTo(double temperature) throws BrewBossConnectionException {
-        setHeaterOn(true);
-        setTargetTemperature(temperature);
-        while (targetTemperature > 0 && Math.abs(getTemperature() - targetTemperature) < 0.1) {
-            pause();
+    private void scheduleUpdateTemperature() {
+        handler.sendMessageDelayed(handler.obtainMessage(UPDATE_TEMPERATURE_MSG), UPDATE_TEMPEATURE_MS);
+    }
+
+    private void ensureTemperatureUpdateScheduled() {
+        handler.removeMessages(UPDATE_TEMPERATURE_MSG);
+        scheduleUpdateTemperature();
+    }
+
+    private void updateTemperature() {
+        if (state.isAutomaticMode() && targetTemperature > 0) {
+            int power = predictor.predict(state.getTemperature());
+            Log.e("CRP", "targetTemperature " + targetTemperature + " power " + power);
+            if (power != state.getHeaterPower()) {
+                try {
+                    connection.setHeaterPower(power);
+                } catch (BrewBossConnectionException e) {
+                    // TODO report this somehow
+                }
+            }
+            scheduleUpdateTemperature();
         }
     }
 
-    private final Thread thread = new Thread() {
+    private Handler handler = new Handler() {
         @Override
-        public void run() {
-            while (true) {
-                if (state.isAutomaticMode() && targetTemperature > 0) {
-                    int power = predictor.predict(state.getTemperature());
-                    Log.e("CRP", "targetTemperature " + targetTemperature + " power " + power);
-                    if (power != state.getHeaterPower()) {
-                        try {
-                            connection.setHeaterPower(power);
-                        } catch (BrewBossConnectionException e) {
-                            // TODO report this somehow
-                        }
-                    }
-                }
-                pause();
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case UPDATE_TEMPERATURE_MSG:
+                    updateTemperature();
             }
         }
     };
-
-    private void pause() {
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            Log.e(TAG, "Sleep interrupted: " + e.getLocalizedMessage());
-        }
-    }
-}
+};

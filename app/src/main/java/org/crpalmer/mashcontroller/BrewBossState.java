@@ -16,7 +16,7 @@ public class BrewBossState {
 
     private final BrewBossConnection connection;
 
-    private AtomicBoolean automaticMode = new AtomicBoolean(true);
+    private AtomicBoolean automaticMode = new AtomicBoolean();
     private AtomicInteger temperatureTimes100 = new AtomicInteger();
     private AtomicBoolean heaterOn = new AtomicBoolean();
     private AtomicInteger heaterPower = new AtomicInteger();
