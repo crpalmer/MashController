@@ -5,7 +5,9 @@ import android.os.Message;
 import android.util.Log;
 
 /**
- * Created by crpalmer on 6/17/17.
+ * BrewBoss
+ *
+ * Interface to the controller.  It allows state inspection and updates to the state.
  */
 
 public class BrewBoss {
@@ -16,12 +18,12 @@ public class BrewBoss {
     private final BrewBossConnection connection = new BrewBossConnection();
     private final BrewBossState state = new BrewBossState(connection);
 
-    private HeaterPowerPredictor rampingPredictor = new VendorHeaterPowerPredictor();
-    private HeaterPowerPredictor maintainPredictor = new PIDHeaterPowerPredictor();
     private HeaterPowerPredictor predictor;
     private double targetTemperature;
 
     public BrewBoss() {
+        HeaterPowerPredictor rampingPredictor = new VendorHeaterPowerPredictor();
+        HeaterPowerPredictor maintainPredictor = new PIDHeaterPowerPredictor();
         predictor = new HybridHeaterPowerPredictor(rampingPredictor, maintainPredictor);
         setAutomaticMode(true);
     }
@@ -104,7 +106,7 @@ public class BrewBoss {
     private void updateTemperature() {
         if (state.isAutomaticMode() && targetTemperature > 0) {
             int power = predictor.predict(state.getTemperature());
-            Log.e("CRP", "targetTemperature " + targetTemperature + " power " + power);
+            Log.v(TAG, "targetTemperature " + targetTemperature + " power " + power);
             if (power != state.getHeaterPower()) {
                 try {
                     connection.setHeaterPower(power);
@@ -125,4 +127,4 @@ public class BrewBoss {
             }
         }
     };
-};
+}

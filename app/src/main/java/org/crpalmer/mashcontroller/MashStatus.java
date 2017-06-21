@@ -4,11 +4,9 @@ import android.content.Context;
 import android.graphics.Color;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
-import android.widget.CompoundButton;
 import android.widget.RadioGroup.OnCheckedChangeListener;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -19,7 +17,6 @@ public class MashStatus extends AppCompatActivity implements BrewBossStateChange
 
     private final BrewBoss brewBoss = new BrewBoss();
     private View top;
-    private RadioGroup brewMode;
     private BrewButton pumpButton;
     private BrewButton heaterButton;
     private EditText actualTemperature;
@@ -58,13 +55,13 @@ public class MashStatus extends AppCompatActivity implements BrewBossStateChange
 
         heaterPower = new DecimalInput(R.id.heaterPower, R.id.heaterPowerOkay, R.id.heaterPowerCancel) {
             @Override
-            public void onValueChanged(double value) {
-                brewBoss.setTargetTemperature(value);
+            public void onValueChanged(double value) throws BrewBossConnectionException {
+                brewBoss.setHeaterPower((int) Math.round(value));
             }
 
             @Override
             public String getCurrentValue() {
-                return formatTemperature(brewBoss.getTargetTemperature());
+                return formatTemperature(brewBoss.getHeaterPower());
             }
         };
 
@@ -79,15 +76,17 @@ public class MashStatus extends AppCompatActivity implements BrewBossStateChange
         heaterButton = new BrewButton(R.id.heaterOnButton) {
             @Override
             public void changeState(boolean newState) throws BrewBossConnectionException {
-                brewBoss.setPumpOn(newState);
+                brewBoss.setHeaterOn(newState);
             }
         };
         heaterButton.setVisualState(brewBoss.isHeaterOn());
 
         // Do brew mode last because it changes other views
-        brewMode = (RadioGroup) findViewById(R.id.brewMode);
+        RadioGroup brewMode = (RadioGroup) findViewById(R.id.brewMode);
         brewMode.setOnCheckedChangeListener(brewModeListener);
         brewMode.check(brewBoss.isAutomaticMode() ? R.id.automaticMode : R.id.manualMode);
+
+        brewBoss.addStateChangeListener(this);
     }
 
     private void hideSoftKeyboard(View view) {
@@ -141,7 +140,7 @@ public class MashStatus extends AppCompatActivity implements BrewBossStateChange
                 public void onClick(View view) {
                     try {
                         onValueChanged(Double.valueOf(editText.getText().toString()));
-                    } catch (IllegalArgumentException e) {
+                    } catch (IllegalArgumentException | BrewBossConnectionException e) {
                         Toast.makeText(getBaseContext(), e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
                     }
                     top.requestFocus();
@@ -167,7 +166,7 @@ public class MashStatus extends AppCompatActivity implements BrewBossStateChange
             editText.setBackgroundColor(enabled ? Color.TRANSPARENT : Color.LTGRAY);
         }
 
-        public abstract void onValueChanged(double value);
+        public abstract void onValueChanged(double value) throws BrewBossConnectionException;
 
         public abstract String getCurrentValue();
     }
@@ -203,18 +202,17 @@ public class MashStatus extends AppCompatActivity implements BrewBossStateChange
         @Override
         public void onCheckedChanged(RadioGroup radioGroup, int id) {
             boolean automatic = id == R.id.automaticMode;
-            Log.e("CRP", "onCheckedChanged " + id + "automatic? " + automatic);
             brewBoss.setAutomaticMode(automatic);
-            heaterPower.setEnabled(automatic ? false : true);
-            targetTemperature.setEnabled(automatic ? true : false);
+            heaterPower.setEnabled(!automatic);
+            targetTemperature.setEnabled(automatic);
         }
     };
 
-    private static final String formatTemperature(double temperature) {
+    private static String formatTemperature(double temperature) {
         return formatTemperature(temperature, true);
     }
 
-    private static final String formatTemperature(double temperature, boolean pretty) {
+    private static String formatTemperature(double temperature, boolean pretty) {
         String result = String.format("%.1f", temperature);
         if (pretty && result.endsWith(".0")) {
             return result.substring(0, result.length() - 2);

@@ -1,12 +1,14 @@
 package org.crpalmer.mashcontroller;
 
 /**
- * Created by crpalmer on 6/17/17.
+ * HybridHeaterPowerPredictor
+ *
+ * Power predictor that uses one predictor when it is close to the target and a
+ * different predictor when trying to ramp up to the target temperature.
  */
 
 public class HybridHeaterPowerPredictor implements HeaterPowerPredictor {
     private boolean maintaining;
-    private double targetTemperature;
     private final HeaterPowerPredictor rampingPredictor;
     private final HeaterPowerPredictor maintainingPredictor;
 
@@ -17,7 +19,6 @@ public class HybridHeaterPowerPredictor implements HeaterPowerPredictor {
 
     @Override
     public synchronized void start(double targetTemperature) {
-        this.targetTemperature = targetTemperature;
         maintaining = false;
         rampingPredictor.start(targetTemperature);
         maintainingPredictor.start(targetTemperature);

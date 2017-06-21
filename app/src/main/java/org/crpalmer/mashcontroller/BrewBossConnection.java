@@ -5,12 +5,13 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 
 /**
- * Created by crpalmer on 6/17/17.
+ * BrewBossConnection
+ *
+ * Communication channel to/from the brew boss controller
  */
 
 public class BrewBossConnection {
@@ -33,21 +34,21 @@ public class BrewBossConnection {
     private BufferedReader in;
     private long connectionCount;
 
-    BrewBossConnection() {
+    public BrewBossConnection() {
         this(HOST, PORT);
     }
 
-    BrewBossConnection(String host_, int port_) {
-        host = host_;
-        port = port_;
+    public BrewBossConnection(String host, int port) {
+        this.host = host;
+        this.port = port;
     }
 
-    public synchronized  boolean isConnected() {
+    public synchronized boolean isConnected() {
         return socket != null;
     }
 
     public String readLine() throws BrewBossConnectionException {
-        BufferedReader currentIn = in;
+        BufferedReader currentIn;
         long currentConnectionCount;
         synchronized (this) {
             ensureConnectedLocked();
@@ -55,7 +56,7 @@ public class BrewBossConnection {
             currentConnectionCount = connectionCount;
         }
         try {
-            return in.readLine();
+            return currentIn.readLine();
         } catch (IOException e) {
             synchronized (this) {
                 if (connectionCount == currentConnectionCount) {
@@ -98,8 +99,6 @@ public class BrewBossConnection {
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 connectionCount++;
             }
-        } catch (UnknownHostException e) {
-            throw new BrewBossConnectionException(TAG, "Couldn't connect to [" + host + ":" + port + "]", e);
         } catch (IOException e) {
             throw new BrewBossConnectionException(TAG, "Couldn't connect to [" + host + ":" + port + "]", e);
         }
@@ -109,7 +108,7 @@ public class BrewBossConnection {
         if (socket != null) {
             try {
                 socket.close();
-            } catch (IOException ee) {
+            } catch (IOException ignored) {
             }
             socket = null;
         }

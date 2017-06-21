@@ -1,7 +1,9 @@
 package org.crpalmer.mashcontroller;
 
 /**
- * Created by crpalmer on 6/17/17.
+ * VendorHeaterPowerPredictor
+ *
+ * This is the prediction algorithm used by the Brew Boss vendor in their product.
  */
 
 public class VendorHeaterPowerPredictor implements HeaterPowerPredictor {

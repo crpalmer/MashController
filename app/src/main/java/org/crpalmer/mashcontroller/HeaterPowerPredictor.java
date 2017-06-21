@@ -1,10 +1,12 @@
 package org.crpalmer.mashcontroller;
 
 /**
- * Created by crpalmer on 6/17/17.
+ * HeaterPowerPredictor
+ *
+ * Predict the heater power based on the current and target temperatures.
  */
 
 public interface HeaterPowerPredictor {
-    public void start(double targetTemperature);
-    public int predict(double currentTemperature);
+    void start(double targetTemperature);
+    int predict(double currentTemperature);
 }

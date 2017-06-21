@@ -1,7 +1,9 @@
 package org.crpalmer.mashcontroller;
 
 /**
- * Created by crpalmer on 6/17/17.
+ * PIDHeaterPowerPredictor
+ *
+ * Use a PID algorithm to predict the heater power.
  */
 
 public class PIDHeaterPowerPredictor implements HeaterPowerPredictor {

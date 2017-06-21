@@ -9,24 +9,27 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static android.content.ContentValues.TAG;
+
 /**
- * Created by crpalmer on 6/17/17.
+ * BrewBossState
+ * <p>
+ * Encapsulate the state and process updates from the controller to keep the view of the state correct.
  */
 
 public class BrewBossState {
-    private static final String TAG = "BrewBossState";
     private static final int UPDATE_STATE_MSG = 1;
     private static final int UPDATE_STATE_MS = 1000;
 
     private final BrewBossConnection connection;
 
-    private AtomicBoolean automaticMode = new AtomicBoolean();
-    private AtomicInteger temperatureTimes100 = new AtomicInteger();
-    private AtomicBoolean heaterOn = new AtomicBoolean();
-    private AtomicInteger heaterPower = new AtomicInteger();
-    private AtomicBoolean pumpOn = new AtomicBoolean();
+    private final AtomicBoolean automaticMode = new AtomicBoolean();
+    private final AtomicInteger temperatureTimes100 = new AtomicInteger();
+    private final AtomicBoolean heaterOn = new AtomicBoolean();
+    private final AtomicInteger heaterPower = new AtomicInteger();
+    private final AtomicBoolean pumpOn = new AtomicBoolean();
 
-    private List<BrewBossStateChangeListener> listeners = new LinkedList<BrewBossStateChangeListener>();
+    private final List<BrewBossStateChangeListener> listeners = new LinkedList<>();
 
     BrewBossState(BrewBossConnection connection) {
         this.connection = connection;
@@ -53,10 +56,6 @@ public class BrewBossState {
         return pumpOn.get();
     }
 
-    public void setHeaterOn(boolean on) {
-        heaterOn.set(on);
-    }
-
     public void setAutomaticMode(boolean on) {
         automaticMode.set(on);
     }
@@ -67,16 +66,34 @@ public class BrewBossState {
         }
     }
 
+    private void processStateUpdate(String line) {
+        boolean heaterChanged = false;
+        boolean pumpChanged = false;
+        boolean temperatureChanged = false;
+
+        // TODO: figure out the format of this string
+        if (temperatureChanged || heaterChanged || pumpChanged) {
+            for (BrewBossStateChangeListener l : listeners) {
+                if (heaterChanged) {
+                    l.onHeaterChanged(isHeaterOn(), getHeaterPower());
+                }
+                if (pumpChanged) {
+                    l.onPumpChanged(isPumpOn());
+                }
+                if (temperatureChanged) {
+                    l.onTemperatureChanged(getTemperature());
+                }
+            }
+        }
+    }
+
     private void updateState() {
         try {
             connection.heartBeat();
             String line = connection.readLine();
-            // TODO: figure out the format of this string
-
-            // NOTE: if heaterOn == true && heaterPower != reported heater power then resend the heater power
-            //       if heaterOn == false && reported heater power > 0 then set heater power to 9
-            // (aka: treat our state as authority)  Is this right? Is this possible?
+            processStateUpdate(line);
         } catch (BrewBossConnectionException e) {
+            Log.e(TAG, e.getLocalizedMessage(), e);
         } finally {
             scheduleUpdateState();
         }
@@ -86,7 +103,7 @@ public class BrewBossState {
         handler.sendMessageDelayed(handler.obtainMessage(UPDATE_STATE_MSG), UPDATE_STATE_MS);
     }
 
-    private Handler handler = new Handler() {
+    private final Handler handler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
