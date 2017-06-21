@@ -196,6 +196,11 @@ public class MashStatus extends AppCompatActivity {
     };
 
     private static final String formatTemperature(double temperature) {
-        return String.format("%.1f", temperature);
+        String result = String.format("%.1f", temperature);
+        if (result.endsWith(".0")) {
+            return result.substring(0, result.length() - 2);
+        } else {
+            return result;
+        }
     }
 }
