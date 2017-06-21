@@ -20,7 +20,7 @@
             android:layout_height="match_parent"
             android:layout_gravity="center_horizontal"
             android:background="@color/subTitleBackround"
-            android:text="Temperature"
+            android:text="@string/temperature"
             style="@style/subtitle" />
 
         <LinearLayout
@@ -40,7 +40,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
-                    android:text="Actual"
+                    android:text="@string/actual_temperature"
                     android:textAppearance="@android:style/TextAppearance.Material.Large" />
 
                 <EditText
@@ -65,7 +65,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
-                    android:text="Target"
+                    android:text="@string/target_temperature"
                     android:textAppearance="@android:style/TextAppearance.Material.Large" />
 
                 <EditText

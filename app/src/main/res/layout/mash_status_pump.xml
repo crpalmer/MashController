@@ -12,7 +12,7 @@
         android:layout_height="match_parent"
         android:layout_gravity="center_horizontal"
         android:textAlignment="center"
-        android:text="Pump"
+        android:text="@string/pump"
         style="@style/subtitle"/>
 
     <Button

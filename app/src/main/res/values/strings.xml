@@ -1,3 +1,18 @@
 <resources>
     <string name="app_name">Mash Controller</string>
+
+    <!-- Mash Status -->
+    <string name="connection_status">Connection Status:</string>
+    <string name="connection_status_connected">CONNECTED</string>
+    <string name="connection_status_disconnected">DISCONNECTED</string>
+    <string name="brew_mode">Brew Mode</string>
+    <string name="brew_mode_automatic">Automatic</string>
+    <string name="brew_mode_manual">Manual</string>
+    <string name="pump">Pump</string>
+    <string name="status_on">ON</string>
+    <string name="status_off">OFF</string>
+    <string name="heater">Heater</string>
+    <string name="temperature">Temperature</string>
+    <string name="actual_temperature">Actual</string>
+    <string name="target_temperature">Target</string>
 </resources>

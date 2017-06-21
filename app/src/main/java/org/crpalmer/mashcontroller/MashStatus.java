@@ -119,7 +119,7 @@ public class MashStatus extends AppCompatActivity implements BrewBossStateChange
     @Override
     public void onConnectionStateChanged(boolean connected) {
         connectionStatus.setTextColor(connected ? Color.GREEN : Color.RED);
-        connectionStatus.setText(connected ? "CONNECTED" : "DISCONNECTED");
+        connectionStatus.setText(getString(connected ? R.string.connection_status_connected : R.string.connection_status_disconnected));
     }
 
     @Override
@@ -210,7 +210,7 @@ public class MashStatus extends AppCompatActivity implements BrewBossStateChange
 
         public void setVisualState(boolean enabled) {
             button.setBackgroundColor(enabled ? Color.GREEN : Color.YELLOW);
-            button.setText(enabled ? "ON" : "OFF");
+            button.setText(getString(enabled ? R.string.status_on : R.string.status_off));
             currentState = enabled;
         }
 

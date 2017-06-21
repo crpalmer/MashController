@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="center_horizontal"
-        android:text="Brew Mode"
+        android:text="@string/brew_mode"
         style="@style/subtitle" />
 
     <RadioGroup
@@ -27,7 +27,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginRight="10dp"
-            android:text="Automatic" />
+            android:text="@string/brew_mode_automatic" />
 
         <RadioButton
             android:id="@+id/manualMode"
@@ -35,6 +35,6 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginRight="10dp"
-            android:text="Manual" />
+            android:text="@string/brew_mode_manual" />
     </RadioGroup>
 </LinearLayout>
