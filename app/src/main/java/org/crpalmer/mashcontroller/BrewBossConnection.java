@@ -26,7 +26,7 @@ public class BrewBossConnection {
     private static final String TEMPERATURE_UNIT_CMD = "06";
 
     private static final String HOST = "192.168.11.254";
-    private static final int PORT = 5000;
+    private static final int PORT = 8080;
 
     private final String host;
     private final int port;
