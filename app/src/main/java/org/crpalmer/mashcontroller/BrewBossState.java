@@ -76,7 +76,19 @@ public class BrewBossState {
         boolean pumpChanged = false;
         boolean temperatureChanged = false;
 
-        // TODO: figure out the format of this string
+        String values[] = line.split(",");
+        double newTemperature = Double.valueOf(values[1]);
+        int newTemperatureTimes100 = (int) Math.round(newTemperature * 100);
+        int newHeaterPower = Integer.valueOf(values[2]);
+        boolean newHeaterOn = newHeaterPower > 0;
+        boolean newPumpOn = "1".equals(values[3]);
+        heaterChanged |= heaterOn.getAndSet(newHeaterOn) != newHeaterOn;
+        if (newHeaterOn) {
+            heaterChanged |= heaterPower.getAndSet(newHeaterPower) != newHeaterPower;
+        }
+        pumpChanged |= pumpOn.getAndSet(newPumpOn) != newPumpOn;
+        temperatureChanged |= temperatureTimes100.getAndSet(newTemperatureTimes100) != newTemperatureTimes100;
+
         if (temperatureChanged || heaterChanged || pumpChanged) {
             synchronized(listeners) {
                 for (BrewBossStateChangeListener l : listeners) {
