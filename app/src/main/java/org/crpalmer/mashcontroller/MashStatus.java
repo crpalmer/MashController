@@ -1,9 +1,17 @@
 package org.crpalmer.mashcontroller;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
@@ -15,6 +23,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 public class MashStatus extends AppCompatActivity implements BrewBossStateChangeListener {
+    static final int MY_PERMISSIONS_REQUEST_INTERNET = 1;
+
+    static final int CONNECTION_STATE_CHANGED_MSG = 1;
+    static final int HEATER_CHANGED_MSG = 2;
+    static final int PUMP_CHANGED_MSG = 3;
+    static final int TEMPERATURE_CHANGED_MSG = 4;
 
     private final BrewBoss brewBoss = new BrewBoss();
     private View top;
@@ -51,6 +65,8 @@ public class MashStatus extends AppCompatActivity implements BrewBossStateChange
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mash_status);
+
+        requestNetworkPermission();
 
         top = findViewById(R.id.mashStatusTop);
         top.setOnFocusChangeListener(new View.OnFocusChangeListener() {
@@ -111,6 +127,38 @@ public class MashStatus extends AppCompatActivity implements BrewBossStateChange
         brewBoss.addStateChangeListener(this);
     }
 
+    private void requestNetworkPermission() {
+        // Here, thisActivity is the current activity
+        Log.e("CRP", "checking");
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.INTERNET)
+                != PackageManager.PERMISSION_GRANTED) {
+            Log.e("CRP", "not granted");
+
+            // Should we show an explanation?
+            if (false && ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.INTERNET)) {
+
+                // Show an explanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+
+
+            } else {
+
+                // No explanation needed, we can request the permission.
+                Log.e("CRP", "requestingCRP");
+
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.INTERNET},
+                        MY_PERMISSIONS_REQUEST_INTERNET);
+
+                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
+                // app-defined int constant. The callback method gets the
+                // result of the request.
+            }
+        }
+    }
     private void hideSoftKeyboard(View view) {
         InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
@@ -118,25 +166,46 @@ public class MashStatus extends AppCompatActivity implements BrewBossStateChange
 
     @Override
     public void onConnectionStateChanged(boolean connected) {
-        connectionStatus.setTextColor(connected ? Color.GREEN : Color.RED);
-        connectionStatus.setText(getString(connected ? R.string.connection_status_connected : R.string.connection_status_disconnected));
+        handler.sendMessage(handler.obtainMessage(CONNECTION_STATE_CHANGED_MSG));
     }
 
     @Override
     public void onHeaterChanged(boolean on, int power) {
-        heaterButton.setVisualState(on);
-        heaterPower.resetValue();
+        handler.sendMessage(handler.obtainMessage(HEATER_CHANGED_MSG));
     }
 
     @Override
     public void onPumpChanged(boolean on) {
-        pumpButton.setVisualState(on);
+        handler.sendMessage(handler.obtainMessage(PUMP_CHANGED_MSG));
     }
 
     @Override
     public void onTemperatureChanged(double temperature) {
-        actualTemperature.setText(formatTemperature(temperature));
+        handler.sendMessage(handler.obtainMessage(TEMPERATURE_CHANGED_MSG));
     }
+
+    private Handler handler = new Handler(Looper.getMainLooper()) {
+        @Override
+        public void handleMessage(Message msg) {
+            switch(msg.what) {
+                case CONNECTION_STATE_CHANGED_MSG:
+                    boolean isConnected = brewBoss.isConnected();
+                    connectionStatus.setTextColor(isConnected ? Color.GREEN : Color.RED);
+                    connectionStatus.setText(getString(isConnected ? R.string.connection_status_connected : R.string.connection_status_disconnected));
+                    break;
+                case HEATER_CHANGED_MSG:
+                    heaterButton.setVisualState(brewBoss.isHeaterOn());
+                    heaterPower.resetValue();
+                    break;
+                case PUMP_CHANGED_MSG:
+                    pumpButton.setVisualState(brewBoss.isPumpOn());
+                    break;
+                case TEMPERATURE_CHANGED_MSG:
+                    actualTemperature.setText(formatTemperature(brewBoss.getTemperature()));
+                    break;
+            }
+        }
+    };
 
     private abstract class DecimalInput {
         private EditText editText;
