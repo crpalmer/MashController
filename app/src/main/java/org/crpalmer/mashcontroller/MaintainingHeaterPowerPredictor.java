@@ -1,7 +1,7 @@
 package org.crpalmer.mashcontroller;
 
 /**
- * MaintainHeaterPowerPredictor
+ * MaintainingHeaterPowerPredictor
  *
  * A power predictor that attempts to maintain the temperature over a window of time (or restore the
  * temperature over a window of time).
@@ -15,7 +15,7 @@ package org.crpalmer.mashcontroller;
  * 1 degree over PREDICT_ONE_DEGREE_MS.
  */
 
-public class MaintainHeaterPowerPredictor implements HeaterPowerPredictor, BrewBossStateChangeListener {
+public class MaintainingHeaterPowerPredictor implements HeaterPowerPredictor, BrewBossStateChangeListener {
     private static final double ALPHA = 0.5;
     private static final int PREDICT_ONE_DEGREE_MS = 2*60*60*1000;
     private static final int RESTORE_TEMP_MS = 1*60*1000;
@@ -27,7 +27,7 @@ public class MaintainHeaterPowerPredictor implements HeaterPowerPredictor, BrewB
     private int smoothedMsPerDegree;
     private double targetTemperature;
 
-    public MaintainHeaterPowerPredictor(BrewBoss brewBoss) {
+    public MaintainingHeaterPowerPredictor(BrewBoss brewBoss) {
         brewBoss.addStateChangeListener(this);
     }
 
@@ -71,6 +71,9 @@ public class MaintainHeaterPowerPredictor implements HeaterPowerPredictor, BrewB
     @Override
     public void onTemperatureChanged(double temperature) {
         long ms = System.currentTimeMillis();
+
+        // TODO: What if the current power is too low and temperature is dropping?  How does this
+        // need to accommodate that?
 
         if (currentTemperature < temperature && temperatureStartMs > 0) {
             long neWMsPerDegree = ms - temperatureStartMs;
