@@ -1,5 +1,9 @@
 package org.crpalmer.mashcontroller;
 
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -18,6 +22,8 @@ import java.util.List;
 
 public class BrewBossConnection {
     private static final String TAG = "BrewBossConnection";
+
+    private static final int SEND_COMMAND_MSG = 1;
 
     private static final String HEARTBEAT_CMD = "01";
     private static final String HEATER_POWER_CMD = "02";
@@ -45,6 +51,7 @@ public class BrewBossConnection {
     public BrewBossConnection(String host, int port) {
         this.host = host;
         this.port = port;
+        looperThread.start();
     }
 
     public void addStateChangeListener(BrewBossStateChangeListener l) {
@@ -55,7 +62,7 @@ public class BrewBossConnection {
     }
 
     private void notifyListeners(boolean isConnected) {
-        synchronized(listeners) {
+        synchronized (listeners) {
             for (BrewBossStateChangeListener l : listeners) {
                 l.onConnectionStateChanged(isConnected);
             }
@@ -135,16 +142,48 @@ public class BrewBossConnection {
         }
     }
 
-    private synchronized void sendCommand(String cmd) throws BrewBossConnectionException {
-        ensureConnectedLocked();
-        try {
-            out.write(cmd.getBytes());
-            out.write(13);
-            out.write(10);
-            out.flush();
-        } catch (IOException e) {
-            resetConnectionLocked();
-            throw new BrewBossConnectionException(TAG, "Failed to write data to [" + HOST + ":" + PORT + "]", e);
+    private void sendCommand(String command) {
+        looperThread.sendCommand(command);
+    }
+
+    private LooperThread looperThread = new LooperThread();
+
+    private class LooperThread extends Thread {
+        public Handler handler;
+
+        public void sendCommand(String command) {
+            while (handler == null) {
+            }
+            handler.sendMessage(handler.obtainMessage(SEND_COMMAND_MSG, command));
+        }
+
+        public void run() {
+            Looper.prepare();
+
+            handler = new Handler() {
+                public void handleMessage(Message msg) {
+                    switch (msg.what) {
+                        case SEND_COMMAND_MSG:
+                            try {
+                                String cmd = (String) msg.obj;
+
+                                ensureConnectedLocked();
+                                out.write(cmd.getBytes());
+                                out.write(13);
+                                out.write(10);
+                                out.flush();
+                            } catch (IOException e) {
+                                resetConnectionLocked();
+                                e.printStackTrace();
+                            } catch (BrewBossConnectionException e) {
+                                e.printStackTrace();
+                            }
+                            break;
+                    }
+                }
+            };
+
+            Looper.loop();
         }
     }
 

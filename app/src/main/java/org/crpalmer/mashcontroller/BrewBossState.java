@@ -1,6 +1,7 @@
 package org.crpalmer.mashcontroller;
 
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
@@ -30,20 +31,11 @@ public class BrewBossState {
     private final AtomicBoolean pumpOn = new AtomicBoolean();
 
     private final List<BrewBossStateChangeListener> listeners = new LinkedList<>();
-    private final Handler handler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case UPDATE_STATE_MSG:
-                    updateState();
-                    break;
-            }
-        }
-    };
 
     BrewBossState(BrewBossConnection connection) {
         this.connection = connection;
-        scheduleUpdateState();
+        looperThread.start();
+        looperThread.scheduleUpdateState();
     }
 
     public int getHeaterPower() {
@@ -110,11 +102,34 @@ public class BrewBossState {
         } catch (BrewBossConnectionException e) {
             Log.e(TAG, e.getLocalizedMessage(), e);
         } finally {
-            scheduleUpdateState();
+            looperThread.scheduleUpdateState();
         }
     }
 
-    private void scheduleUpdateState() {
-        handler.sendMessageDelayed(handler.obtainMessage(UPDATE_STATE_MSG), UPDATE_STATE_MS);
+    private LooperThread looperThread = new LooperThread();
+
+    private class LooperThread extends Thread {
+        public Handler handler;
+
+        public void scheduleUpdateState() {
+            while (handler == null) {}
+            handler.sendMessageDelayed(handler.obtainMessage(UPDATE_STATE_MSG), UPDATE_STATE_MS);
+        }
+
+        public void run() {
+            Looper.prepare();
+
+            handler = new Handler() {
+                public void handleMessage(Message msg) {
+                    switch (msg.what) {
+                        case UPDATE_STATE_MSG:
+                            updateState();
+                            break;
+                    }
+                }
+            };
+
+            Looper.loop();
+        }
     }
 }
