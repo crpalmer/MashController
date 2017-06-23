@@ -31,7 +31,7 @@ public class BrewBoss {
     };
 
     public BrewBoss() {
-        HeaterPowerPredictor rampingPredictor = new VendorHeaterPowerPredictor();
+        HeaterPowerPredictor rampingPredictor = new RampingHeaterPowerPredictor();
         HeaterPowerPredictor maintainPredictor = new PIDHeaterPowerPredictor();
         predictor = new HybridHeaterPowerPredictor(rampingPredictor, maintainPredictor);
         setAutomaticMode(true);

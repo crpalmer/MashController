@@ -1,12 +1,12 @@
 package org.crpalmer.mashcontroller;
 
 /**
- * VendorHeaterPowerPredictor
+ * RampingHeaterPowerPredictor
  * <p>
  * This is the prediction algorithm used by the Brew Boss vendor in their product.
  */
 
-public class VendorHeaterPowerPredictor implements HeaterPowerPredictor {
+public class RampingHeaterPowerPredictor implements HeaterPowerPredictor {
     private static final int DELTA_T1 = 4;
     private static final int DELTA_T2 = 2;
     private static final int SLOW_POWER = 75;
