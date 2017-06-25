@@ -1,8 +1,14 @@
 package org.crpalmer.mashcontroller;
 
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.LinkedList;
 
 /**
  * BrewBoss
@@ -12,29 +18,43 @@ import android.util.Log;
 
 public class BrewBoss {
     private static final String TAG = "BrewBoss";
+
     private static final int UPDATE_TEMPERATURE_MSG = 1;
     private static final int UPDATE_TEMPEATURE_MS = 900;
+    private static final int START_STEP_MSG = 2;
+    private static final int IS_STEP_READY_MSG = 3;
+    private static final int IS_STEP_READY_MS = 1000;
 
     private final BrewBossConnection connection = new BrewBossConnection();
     private final BrewBossState state = new BrewBossState(connection);
 
     private HeaterPowerPredictor predictor;
     private double targetTemperature;
-    private Handler handler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case UPDATE_TEMPERATURE_MSG:
-                    updateTemperature();
-            }
-        }
-    };
+
+    private LinkedList<BrewBossStateChangeListener> listeners = new LinkedList<>();
+    private ArrayList<BrewStep> brewSteps;
+    private int currentStepNum = -1;
+    private int nextStepNum = -1;
+    private BrewStep currentStep;
 
     public BrewBoss() {
         HeaterPowerPredictor rampingPredictor = new RampingHeaterPowerPredictor();
         HeaterPowerPredictor maintainingPredictor = new MaintainingHeaterPowerPredictor(this);
         predictor = new HybridHeaterPowerPredictor(rampingPredictor, maintainingPredictor);
-        setAutomaticMode(true);
+        looperThread.start();
+    }
+
+    public void loadBrewXml(File file) throws FileNotFoundException, XmlException {
+        MashSession mashSession = new MashSession(file);
+        brewSteps = new ArrayList<>();
+        if (mashSession.getInfuseTemp() != null) {
+            brewSteps.add(new MashInStep(mashSession.getInfuseAmount(), (int) Math.round(mashSession.getInfuseTemp())));
+        }
+        brewSteps.add(new TurnPumpOnStep());
+        brewSteps.addAll(mashSession.getMashSteps());
+
+        currentStepNum = -1;
+        currentStep = null;
     }
 
     public int getHeaterPower() {
@@ -64,6 +84,11 @@ public class BrewBoss {
             targetTemperature = temperature;
             predictor.start(temperature);
             ensureTemperatureUpdateScheduled();
+            synchronized (listeners) {
+                for (BrewBossStateChangeListener l : listeners) {
+                    l.onTargetTemperatureChanged(temperature);
+                }
+            }
         }
     }
 
@@ -73,9 +98,13 @@ public class BrewBoss {
 
     public synchronized void setAutomaticMode(boolean on) {
         state.setAutomaticMode(on);
-        handler.removeMessages(UPDATE_TEMPERATURE_MSG);
+        looperThread.handler.removeMessages(UPDATE_TEMPERATURE_MSG);
         if (on) {
             scheduleUpdateTemperature();
+            looperThread.handler.sendMessage(looperThread.handler.obtainMessage(START_STEP_MSG, (Integer) currentStepNum < 0 ? 0 : currentStepNum));
+        } else {
+            looperThread.handler.removeMessages(START_STEP_MSG);
+            looperThread.handler.removeMessages(IS_STEP_READY_MSG);
         }
     }
 
@@ -99,17 +128,29 @@ public class BrewBoss {
         connection.setPumpOn(isPumpOn);
     }
 
+    public void alarm() throws BrewBossConnectionException {
+        connection.alarm();
+    }
+
+    public void scheduleIsStepReady() {
+        looperThread.handler.sendMessageDelayed(looperThread.handler.obtainMessage(IS_STEP_READY_MSG), IS_STEP_READY_MS);
+    }
+
     public void addStateChangeListener(BrewBossStateChangeListener listener) {
         connection.addStateChangeListener(listener);
         state.addStateChangeListener(listener);
+        synchronized (listeners) {
+            listeners.add(listener);
+            listener.onTargetTemperatureChanged(getTargetTemperature());
+        }
     }
 
     private void scheduleUpdateTemperature() {
-        handler.sendMessageDelayed(handler.obtainMessage(UPDATE_TEMPERATURE_MSG), UPDATE_TEMPEATURE_MS);
+        looperThread.handler.sendMessageDelayed(looperThread.handler.obtainMessage(UPDATE_TEMPERATURE_MSG), UPDATE_TEMPEATURE_MS);
     }
 
     private void ensureTemperatureUpdateScheduled() {
-        handler.removeMessages(UPDATE_TEMPERATURE_MSG);
+        looperThread.handler.removeMessages(UPDATE_TEMPERATURE_MSG);
         scheduleUpdateTemperature();
     }
 
@@ -127,4 +168,87 @@ public class BrewBoss {
             scheduleUpdateTemperature();
         }
     }
+
+    private void startStep(int stepNum) {
+        nextStepNum = stepNum;
+        finishStep();
+    }
+
+    private void finishStep() {
+        try {
+            if (currentStep == null || currentStep.finishStep(this)) {
+                stepFinished();
+            }
+        } catch (BrewBossConnectionException e) {
+        }
+    }
+
+    public void stepFinished() {
+        try {
+            currentStepNum = nextStepNum;
+            if (currentStepNum >= brewSteps.size()) {
+                setAutomaticMode(false);
+                try {
+                    alarm();
+                } catch (BrewBossConnectionException e) {
+                    App.toastException(e);
+                }
+            } else {
+                currentStep = brewSteps.get(currentStepNum);
+                if (currentStep.startStep(this)) {
+                    stepStarted();
+                }
+            }
+        } catch (BrewBossConnectionException e) {
+            App.toastException(e);
+            setAutomaticMode(false);
+        }
+    }
+
+    public void stepStarted() {
+        scheduleIsStepReady();
+    }
+
+    private LooperThread looperThread = new LooperThread();
+
+    private class LooperThread extends Thread {
+        public Handler handler;
+        private int HACK;
+
+        public void run() {
+            Looper.prepare();
+
+            handler = new Handler() {
+                public void handleMessage(Message msg) {
+                    switch (msg.what) {
+                        case UPDATE_TEMPERATURE_MSG:
+                            updateTemperature();
+                            break;
+                        case START_STEP_MSG:
+                            startStep((int) msg.obj);
+                            HACK = 0;
+                            break;
+                        case IS_STEP_READY_MSG:
+                            if (currentStep != null) {
+                                HACK++;
+                                if (currentStep.isStepReady(getTemperature()) || HACK > 5) {
+                                    HACK = 0;
+//                                    startStepTimer();
+                                    nextStepNum = currentStepNum + 1;
+                                finishStep();
+                                } else {
+                                    scheduleIsStepReady();
+                                }
+                            }
+                            break;
+
+                    }
+
+                }
+            };
+
+            Looper.loop();
+        }
+    }
+
 }

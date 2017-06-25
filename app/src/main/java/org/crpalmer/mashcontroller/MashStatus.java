@@ -1,7 +1,9 @@
 package org.crpalmer.mashcontroller;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -11,7 +13,6 @@ import android.os.Message;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
@@ -22,13 +23,15 @@ import android.widget.RadioGroup.OnCheckedChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class MashStatus extends AppCompatActivity implements BrewBossStateChangeListener {
-    static final int MY_PERMISSIONS_REQUEST_INTERNET = 1;
+import java.io.File;
+import java.io.FileNotFoundException;
 
+public class MashStatus extends AppCompatActivity implements BrewBossStateChangeListener {
     static final int CONNECTION_STATE_CHANGED_MSG = 1;
     static final int HEATER_CHANGED_MSG = 2;
     static final int PUMP_CHANGED_MSG = 3;
     static final int TEMPERATURE_CHANGED_MSG = 4;
+    static final int TARGET_TEMPERATURE_CHANGED_MSG = 5;
 
     private final BrewBoss brewBoss = new BrewBoss();
     private View top;
@@ -38,15 +41,19 @@ public class MashStatus extends AppCompatActivity implements BrewBossStateChange
     private EditText actualTemperature;
     private DecimalInput targetTemperature;
     private DecimalInput heaterPower;
+
     private OnCheckedChangeListener brewModeListener = new OnCheckedChangeListener() {
         @Override
         public void onCheckedChanged(RadioGroup radioGroup, int id) {
-            boolean automatic = id == R.id.automaticMode;
-            brewBoss.setAutomaticMode(automatic);
-            heaterPower.setEnabled(!automatic);
-            targetTemperature.setEnabled(automatic);
+            setAutomaticMode(id == R.id.automaticMode);
         }
     };
+
+    private void setAutomaticMode(boolean automatic) {
+        brewBoss.setAutomaticMode(automatic);
+        heaterPower.setEnabled(!automatic);
+        targetTemperature.setEnabled(automatic);
+    }
 
     private static String formatTemperature(double temperature) {
         return formatTemperature(temperature, true);
@@ -66,7 +73,7 @@ public class MashStatus extends AppCompatActivity implements BrewBossStateChange
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mash_status);
 
-        requestNetworkPermission();
+        App.requestPermissions(this);
 
         top = findViewById(R.id.mashStatusTop);
         top.setOnFocusChangeListener(new View.OnFocusChangeListener() {
@@ -125,40 +132,14 @@ public class MashStatus extends AppCompatActivity implements BrewBossStateChange
         brewMode.check(brewBoss.isAutomaticMode() ? R.id.automaticMode : R.id.manualMode);
 
         brewBoss.addStateChangeListener(this);
-    }
 
-    private void requestNetworkPermission() {
-        // Here, thisActivity is the current activity
-        Log.e("CRP", "checking");
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.INTERNET)
-                != PackageManager.PERMISSION_GRANTED) {
-            Log.e("CRP", "not granted");
-
-            // Should we show an explanation?
-            if (false && ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.INTERNET)) {
-
-                // Show an explanation to the user *asynchronously* -- don't block
-                // this thread waiting for the user's response! After the user
-                // sees the explanation, try again to request the permission.
-
-
-            } else {
-
-                // No explanation needed, we can request the permission.
-                Log.e("CRP", "requestingCRP");
-
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.INTERNET},
-                        MY_PERMISSIONS_REQUEST_INTERNET);
-
-                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
-                // app-defined int constant. The callback method gets the
-                // result of the request.
-            }
+        try {
+            brewBoss.loadBrewXml(new File("/sdcard/Download/a-beer-only-chris-and-carrie-could-love.xml"));
+        } catch (XmlException | FileNotFoundException e) {
+            App.toastException(e);
         }
     }
+
     private void hideSoftKeyboard(View view) {
         InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
@@ -184,10 +165,16 @@ public class MashStatus extends AppCompatActivity implements BrewBossStateChange
         handler.sendMessage(handler.obtainMessage(TEMPERATURE_CHANGED_MSG));
     }
 
+    @Override
+    public void onTargetTemperatureChanged(double targetTemperature) {
+        handler.sendMessage(handler.obtainMessage(TARGET_TEMPERATURE_CHANGED_MSG));
+    }
+
+
     private Handler handler = new Handler(Looper.getMainLooper()) {
         @Override
         public void handleMessage(Message msg) {
-            switch(msg.what) {
+            switch (msg.what) {
                 case CONNECTION_STATE_CHANGED_MSG:
                     boolean isConnected = brewBoss.isConnected();
                     connectionStatus.setTextColor(isConnected ? Color.GREEN : Color.RED);
@@ -202,6 +189,9 @@ public class MashStatus extends AppCompatActivity implements BrewBossStateChange
                     break;
                 case TEMPERATURE_CHANGED_MSG:
                     actualTemperature.setText(formatTemperature(brewBoss.getTemperature()));
+                    break;
+                case TARGET_TEMPERATURE_CHANGED_MSG:
+                    targetTemperature.resetValue();
                     break;
             }
         }
@@ -238,7 +228,7 @@ public class MashStatus extends AppCompatActivity implements BrewBossStateChange
                     try {
                         onValueChanged(Double.valueOf(editText.getText().toString()));
                     } catch (IllegalArgumentException | BrewBossConnectionException e) {
-                        Toast.makeText(getBaseContext(), e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+                        App.toastException(e);
                     }
                     top.requestFocus();
                 }
@@ -288,7 +278,7 @@ public class MashStatus extends AppCompatActivity implements BrewBossStateChange
             try {
                 changeState(!currentState);
             } catch (BrewBossConnectionException e) {
-                Toast.makeText(getApplicationContext(), e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+                App.toastException(e);
             }
         }
 

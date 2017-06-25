@@ -9,11 +9,19 @@
     android:weightSum="1">
 
     <include layout="@layout/mash_status_connected" />
-    <include layout="@layout/mash_status_brew_mode"  />
 
-    <include layout="@layout/mash_status_pump" />
+    <include layout="@layout/mash_status_brew_mode" />
 
-    <include layout="@layout/mash_status_heater" />
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <include layout="@layout/mash_status_pump" />
+
+        <include layout="@layout/mash_status_heater" />
+    </LinearLayout>
 
     <include layout="@layout/mash_status_temperature" />
+<!--    <include layout="@layout/mash_status_step" /> -->
 </LinearLayout>

@@ -85,4 +85,9 @@ public class MaintainingHeaterPowerPredictor implements HeaterPowerPredictor, Br
         currentTemperature = temperature;
         temperatureStartMs = ms;
     }
+
+    @Override
+    public void onTargetTemperatureChanged(double targetTemperature) {
+
+    }
 }

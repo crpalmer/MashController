@@ -12,4 +12,6 @@ public interface BrewBossStateChangeListener {
     void onPumpChanged(boolean on);
 
     void onTemperatureChanged(double temperature);
+
+    void onTargetTemperatureChanged(double targetTemperature);
 }

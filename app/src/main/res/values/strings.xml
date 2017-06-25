@@ -17,4 +17,5 @@
     <string name="temperature">Temperature</string>
     <string name="actual_temperature">Actual</string>
     <string name="target_temperature">Target</string>
+    <string name="mash_step">Mash Step</string>
 </resources>

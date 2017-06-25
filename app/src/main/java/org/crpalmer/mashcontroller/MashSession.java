@@ -61,11 +61,11 @@ public class MashSession implements ContentHandler {
         }
     }
 
-    public double getInfuseTemp() {
+    public Double getInfuseTemp() {
         return infuseTemp;
     }
 
-    public double getInfuseAmount() {
+    public Double getInfuseAmount() {
         return infuseAmount;
     }
 
