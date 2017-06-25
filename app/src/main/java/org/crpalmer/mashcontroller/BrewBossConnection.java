@@ -42,7 +42,7 @@ public class BrewBossConnection {
     private BufferedReader in;
     private long connectionCount;
 
-    private final List<BrewBossStateChangeListener> listeners = new LinkedList<>();
+    private final List<BrewStateChangeListener> listeners = new LinkedList<>();
 
     public BrewBossConnection() {
         this(HOST, PORT);
@@ -54,7 +54,7 @@ public class BrewBossConnection {
         looperThread.start();
     }
 
-    public void addStateChangeListener(BrewBossStateChangeListener l) {
+    public void addStateChangeListener(BrewStateChangeListener l) {
         synchronized (listeners) {
             listeners.add(l);
             l.onConnectionStateChanged(isConnected());
@@ -63,7 +63,7 @@ public class BrewBossConnection {
 
     private void notifyListeners(boolean isConnected) {
         synchronized (listeners) {
-            for (BrewBossStateChangeListener l : listeners) {
+            for (BrewStateChangeListener l : listeners) {
                 l.onConnectionStateChanged(isConnected);
             }
         }

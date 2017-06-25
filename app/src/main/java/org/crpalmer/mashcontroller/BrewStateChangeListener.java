@@ -4,7 +4,7 @@ package org.crpalmer.mashcontroller;
  * Created by crpalmer on 6/21/17.
  */
 
-public interface BrewBossStateChangeListener {
+public interface BrewStateChangeListener {
     void onConnectionStateChanged(boolean connected);
 
     void onHeaterChanged(boolean on, int power);

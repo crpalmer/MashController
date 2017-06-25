@@ -15,7 +15,7 @@ package org.crpalmer.mashcontroller;
  * 1 degree over PREDICT_ONE_DEGREE_MS.
  */
 
-public class MaintainingHeaterPowerPredictor implements HeaterPowerPredictor, BrewBossStateChangeListener {
+public class MaintainingHeaterPowerPredictor implements HeaterPowerPredictor, BrewStateChangeListener {
     private static final double ALPHA = 0.5;
     private static final int PREDICT_ONE_DEGREE_MS = 2*60*60*1000;
     private static final int RESTORE_TEMP_MS = 1*60*1000;

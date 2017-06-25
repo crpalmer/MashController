@@ -30,7 +30,7 @@ public class BrewBossState {
     private final AtomicInteger heaterPower = new AtomicInteger();
     private final AtomicBoolean pumpOn = new AtomicBoolean();
 
-    private final List<BrewBossStateChangeListener> listeners = new LinkedList<>();
+    private final List<BrewStateChangeListener> listeners = new LinkedList<>();
 
     BrewBossState(BrewBossConnection connection) {
         this.connection = connection;
@@ -62,7 +62,7 @@ public class BrewBossState {
         return pumpOn.get();
     }
 
-    public void addStateChangeListener(BrewBossStateChangeListener l) {
+    public void addStateChangeListener(BrewStateChangeListener l) {
         synchronized (listeners) {
             listeners.add(l);
             l.onHeaterChanged(isHeaterOn(), getHeaterPower());
@@ -91,7 +91,7 @@ public class BrewBossState {
 
         if (temperatureChanged || heaterChanged || pumpChanged) {
             synchronized(listeners) {
-                for (BrewBossStateChangeListener l : listeners) {
+                for (BrewStateChangeListener l : listeners) {
                     if (heaterChanged) {
                         l.onHeaterChanged(isHeaterOn(), getHeaterPower());
                     }

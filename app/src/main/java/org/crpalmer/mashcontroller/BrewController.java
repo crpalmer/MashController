@@ -31,7 +31,7 @@ public class BrewController {
     private HeaterPowerPredictor predictor;
     private double targetTemperature;
 
-    private LinkedList<BrewBossStateChangeListener> listeners = new LinkedList<>();
+    private LinkedList<BrewStateChangeListener> listeners = new LinkedList<>();
     private ArrayList<BrewStep> brewSteps;
     private int currentStepNum = -1;
     private int nextStepNum = -1;
@@ -85,7 +85,7 @@ public class BrewController {
             predictor.start(temperature);
             ensureTemperatureUpdateScheduled();
             synchronized (listeners) {
-                for (BrewBossStateChangeListener l : listeners) {
+                for (BrewStateChangeListener l : listeners) {
                     l.onTargetTemperatureChanged(temperature);
                 }
             }
@@ -136,7 +136,7 @@ public class BrewController {
         looperThread.handler.sendMessageDelayed(looperThread.handler.obtainMessage(IS_STEP_READY_MSG), IS_STEP_READY_MS);
     }
 
-    public void addStateChangeListener(BrewBossStateChangeListener listener) {
+    public void addStateChangeListener(BrewStateChangeListener listener) {
         connection.addStateChangeListener(listener);
         state.addStateChangeListener(listener);
         synchronized (listeners) {

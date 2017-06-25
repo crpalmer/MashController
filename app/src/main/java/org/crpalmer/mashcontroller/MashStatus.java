@@ -19,7 +19,7 @@ import android.widget.TextView;
 import java.io.File;
 import java.io.FileNotFoundException;
 
-public class MashStatus extends AppCompatActivity implements BrewBossStateChangeListener {
+public class MashStatus extends AppCompatActivity implements BrewStateChangeListener {
     static final int CONNECTION_STATE_CHANGED_MSG = 1;
     static final int HEATER_CHANGED_MSG = 2;
     static final int PUMP_CHANGED_MSG = 3;
