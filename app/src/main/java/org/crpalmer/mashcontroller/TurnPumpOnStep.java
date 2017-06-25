@@ -6,16 +6,16 @@ package org.crpalmer.mashcontroller;
 
 public class TurnPumpOnStep implements BrewStep {
     @Override
-    public boolean startStep(final BrewBoss brewBoss) throws BrewBossConnectionException {
-        brewBoss.alarm();
+    public boolean startStep(final BrewController brewController) throws BrewBossConnectionException {
+        brewController.alarm();
         App.confirm("Connect the pump and open the valve", new Continuation() {
             public void go() {
                 try {
-                    brewBoss.setPumpOn(true);
-                    brewBoss.stepStarted();
+                    brewController.setPumpOn(true);
+                    brewController.stepStarted();
                 } catch (BrewBossConnectionException e) {
                     App.toastException(e);
-                    brewBoss.setAutomaticMode(false);
+                    brewController.setAutomaticMode(false);
                 }
             }
         });
@@ -23,7 +23,7 @@ public class TurnPumpOnStep implements BrewStep {
     }
 
     @Override
-    public boolean finishStep(BrewBoss brewBoss) throws BrewBossConnectionException {
+    public boolean finishStep(BrewController brewController) throws BrewBossConnectionException {
         return true;
     }
 

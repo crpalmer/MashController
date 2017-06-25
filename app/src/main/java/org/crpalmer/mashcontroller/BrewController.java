@@ -11,12 +11,12 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 
 /**
- * BrewBoss
+ * BrewController
  * <p>
  * Interface to the controller.  It allows state inspection and updates to the state.
  */
 
-public class BrewBoss {
+public class BrewController {
     private static final String TAG = "BrewBoss";
 
     private static final int UPDATE_TEMPERATURE_MSG = 1;
@@ -37,7 +37,7 @@ public class BrewBoss {
     private int nextStepNum = -1;
     private BrewStep currentStep;
 
-    public BrewBoss() {
+    public BrewController() {
         HeaterPowerPredictor rampingPredictor = new RampingHeaterPowerPredictor();
         HeaterPowerPredictor maintainingPredictor = new MaintainingHeaterPowerPredictor(this);
         predictor = new HybridHeaterPowerPredictor(rampingPredictor, maintainingPredictor);

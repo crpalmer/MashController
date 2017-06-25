@@ -5,8 +5,8 @@ package org.crpalmer.mashcontroller;
  */
 
 public interface BrewStep {
-    boolean startStep(BrewBoss brewBoss) throws BrewBossConnectionException;
-    boolean finishStep(BrewBoss brewBoss) throws BrewBossConnectionException;
+    boolean startStep(BrewController brewController) throws BrewBossConnectionException;
+    boolean finishStep(BrewController brewController) throws BrewBossConnectionException;
     boolean isStepReady(double currentTemperature);
     int getSeconds();
 }

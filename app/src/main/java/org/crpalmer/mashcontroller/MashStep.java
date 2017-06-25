@@ -16,13 +16,13 @@ public class MashStep  implements BrewStep {
     }
 
     @Override
-    public boolean startStep(BrewBoss brewBoss) {
-        brewBoss.setTargetTemperature(temperature);
+    public boolean startStep(BrewController brewController) {
+        brewController.setTargetTemperature(temperature);
         return true;
     }
 
     @Override
-    public boolean finishStep(BrewBoss brewBoss) throws BrewBossConnectionException {
+    public boolean finishStep(BrewController brewController) throws BrewBossConnectionException {
         return true;
     }
 

@@ -27,8 +27,8 @@ public class MaintainingHeaterPowerPredictor implements HeaterPowerPredictor, Br
     private int smoothedMsPerDegree;
     private double targetTemperature;
 
-    public MaintainingHeaterPowerPredictor(BrewBoss brewBoss) {
-        brewBoss.addStateChangeListener(this);
+    public MaintainingHeaterPowerPredictor(BrewController brewController) {
+        brewController.addStateChangeListener(this);
     }
 
     @Override

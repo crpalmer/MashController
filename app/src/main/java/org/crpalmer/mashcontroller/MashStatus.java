@@ -1,17 +1,11 @@
 package org.crpalmer.mashcontroller;
 
-import android.Manifest;
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
@@ -21,7 +15,6 @@ import android.widget.ImageButton;
 import android.widget.RadioGroup;
 import android.widget.RadioGroup.OnCheckedChangeListener;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -33,7 +26,7 @@ public class MashStatus extends AppCompatActivity implements BrewBossStateChange
     static final int TEMPERATURE_CHANGED_MSG = 4;
     static final int TARGET_TEMPERATURE_CHANGED_MSG = 5;
 
-    private final BrewBoss brewBoss = new BrewBoss();
+    private final BrewController brewController = new BrewController();
     private View top;
     private TextView connectionStatus;
     private BrewButton pumpButton;
@@ -50,7 +43,7 @@ public class MashStatus extends AppCompatActivity implements BrewBossStateChange
     };
 
     private void setAutomaticMode(boolean automatic) {
-        brewBoss.setAutomaticMode(automatic);
+        brewController.setAutomaticMode(automatic);
         heaterPower.setEnabled(!automatic);
         targetTemperature.setEnabled(automatic);
     }
@@ -91,50 +84,50 @@ public class MashStatus extends AppCompatActivity implements BrewBossStateChange
         targetTemperature = new DecimalInput(R.id.targetTemperature, R.id.targetTempOkay, R.id.targetTempCancel) {
             @Override
             public void onValueChanged(double value) {
-                brewBoss.setTargetTemperature(value);
+                brewController.setTargetTemperature(value);
             }
 
             @Override
             public String getCurrentValue() {
-                return formatTemperature(brewBoss.getTargetTemperature());
+                return formatTemperature(brewController.getTargetTemperature());
             }
         };
 
         heaterPower = new DecimalInput(R.id.heaterPower, R.id.heaterPowerOkay, R.id.heaterPowerCancel) {
             @Override
             public void onValueChanged(double value) throws BrewBossConnectionException {
-                brewBoss.setHeaterPower((int) Math.round(value));
+                brewController.setHeaterPower((int) Math.round(value));
             }
 
             @Override
             public String getCurrentValue() {
-                return formatTemperature(brewBoss.getHeaterPower());
+                return formatTemperature(brewController.getHeaterPower());
             }
         };
 
         pumpButton = new BrewButton(R.id.pumpOnButton) {
             @Override
             public void changeState(boolean newState) throws BrewBossConnectionException {
-                brewBoss.setPumpOn(newState);
+                brewController.setPumpOn(newState);
             }
         };
 
         heaterButton = new BrewButton(R.id.heaterOnButton) {
             @Override
             public void changeState(boolean newState) throws BrewBossConnectionException {
-                brewBoss.setHeaterOn(newState);
+                brewController.setHeaterOn(newState);
             }
         };
 
         // Do brew mode last because it changes other views
         RadioGroup brewMode = (RadioGroup) findViewById(R.id.brewMode);
         brewMode.setOnCheckedChangeListener(brewModeListener);
-        brewMode.check(brewBoss.isAutomaticMode() ? R.id.automaticMode : R.id.manualMode);
+        brewMode.check(brewController.isAutomaticMode() ? R.id.automaticMode : R.id.manualMode);
 
-        brewBoss.addStateChangeListener(this);
+        brewController.addStateChangeListener(this);
 
         try {
-            brewBoss.loadBrewXml(new File("/sdcard/Download/a-beer-only-chris-and-carrie-could-love.xml"));
+            brewController.loadBrewXml(new File("/sdcard/Download/a-beer-only-chris-and-carrie-could-love.xml"));
         } catch (XmlException | FileNotFoundException e) {
             App.toastException(e);
         }
@@ -176,19 +169,19 @@ public class MashStatus extends AppCompatActivity implements BrewBossStateChange
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case CONNECTION_STATE_CHANGED_MSG:
-                    boolean isConnected = brewBoss.isConnected();
+                    boolean isConnected = brewController.isConnected();
                     connectionStatus.setTextColor(isConnected ? Color.GREEN : Color.RED);
                     connectionStatus.setText(getString(isConnected ? R.string.connection_status_connected : R.string.connection_status_disconnected));
                     break;
                 case HEATER_CHANGED_MSG:
-                    heaterButton.setVisualState(brewBoss.isHeaterOn());
+                    heaterButton.setVisualState(brewController.isHeaterOn());
                     heaterPower.resetValue();
                     break;
                 case PUMP_CHANGED_MSG:
-                    pumpButton.setVisualState(brewBoss.isPumpOn());
+                    pumpButton.setVisualState(brewController.isPumpOn());
                     break;
                 case TEMPERATURE_CHANGED_MSG:
-                    actualTemperature.setText(formatTemperature(brewBoss.getTemperature()));
+                    actualTemperature.setText(formatTemperature(brewController.getTemperature()));
                     break;
                 case TARGET_TEMPERATURE_CHANGED_MSG:
                     targetTemperature.resetValue();

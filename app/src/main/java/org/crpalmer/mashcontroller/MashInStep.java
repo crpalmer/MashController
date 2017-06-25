@@ -16,26 +16,26 @@ public class MashInStep implements BrewStep {
     }
 
     @Override
-    public boolean startStep(final BrewBoss brewBoss) throws BrewBossConnectionException {
-        brewBoss.alarm();
+    public boolean startStep(final BrewController brewController) throws BrewBossConnectionException {
+        brewController.alarm();
         App.confirm(getWaterVolumeText(), new Continuation() {
             @Override
             public void go() {
-                brewBoss.setTargetTemperature(temperature);
-                brewBoss.stepStarted();
+                brewController.setTargetTemperature(temperature);
+                brewController.stepStarted();
             }
         });
         return false;
     }
 
     @Override
-    public boolean finishStep(final BrewBoss brewBoss) throws BrewBossConnectionException {
-        brewBoss.setTargetTemperature(0);
-        brewBoss.alarm();
+    public boolean finishStep(final BrewController brewController) throws BrewBossConnectionException {
+        brewController.setTargetTemperature(0);
+        brewController.alarm();
         App.confirm("Add the grains to the pot", new Continuation() {
             @Override
             public void go() {
-                brewBoss.stepFinished();
+                brewController.stepFinished();
             }
         });
         return false;
