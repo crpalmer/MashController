@@ -7,6 +7,7 @@ import android.util.Log;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -121,10 +122,18 @@ public class BrewBossState {
     private LooperThread looperThread = new LooperThread();
 
     private class LooperThread extends Thread {
+        private CountDownLatch ready = new CountDownLatch(1);
         public Handler handler;
 
         public void scheduleUpdateState() {
-            while (handler == null) {}
+            while (true) {
+                try {
+                    ready.await();
+                    break;
+                } catch (InterruptedException e) {
+                    App.toastException(e);
+                }
+            }
             handler.sendMessageDelayed(handler.obtainMessage(UPDATE_STATE_MSG), UPDATE_STATE_MS);
         }
 
@@ -141,6 +150,7 @@ public class BrewBossState {
                 }
             };
 
+            ready.countDown();
             Looper.loop();
         }
     }

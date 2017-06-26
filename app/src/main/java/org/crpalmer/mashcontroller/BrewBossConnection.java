@@ -13,6 +13,7 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * BrewBossConnection
@@ -149,10 +150,17 @@ public class BrewBossConnection {
     private LooperThread looperThread = new LooperThread();
 
     private class LooperThread extends Thread {
+        private CountDownLatch ready = new CountDownLatch(1);
         public Handler handler;
 
         public void sendCommand(String command) {
-            while (handler == null) {
+            while (true) {
+                try {
+                    ready.await();
+                    break;
+                } catch (InterruptedException e) {
+                    App.toastException(e);
+                }
             }
             handler.sendMessage(handler.obtainMessage(SEND_COMMAND_MSG, command));
         }
@@ -183,6 +191,8 @@ public class BrewBossConnection {
                 }
             };
 
+            
+            ready.countDown();
             Looper.loop();
         }
     }
