@@ -23,5 +23,5 @@
     </LinearLayout>
 
     <include layout="@layout/mash_status_temperature" />
-<!--    <include layout="@layout/mash_status_step" /> -->
+    <include layout="@layout/mash_status_step" />
 </LinearLayout>

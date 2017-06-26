@@ -33,6 +33,12 @@ public class TurnPumpOnStep implements BrewStep {
     }
 
     @Override
+    public String getDescription() {
+        // TODO: Make this a string resource
+        return "Turn pump on";
+    }
+
+    @Override
     public int getSeconds() {
         return 0;
     }

@@ -32,6 +32,12 @@ public class MashStep  implements BrewStep {
     }
 
     @Override
+    public String getDescription() {
+        // TODO: Make this a string resource
+        return "Mash at " + temperature;
+    }
+
+    @Override
     public int getSeconds() {
         return seconds;
     }

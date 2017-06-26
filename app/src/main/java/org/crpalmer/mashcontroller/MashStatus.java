@@ -25,6 +25,8 @@ public class MashStatus extends AppCompatActivity implements BrewStateChangeList
     static final int PUMP_CHANGED_MSG = 3;
     static final int TEMPERATURE_CHANGED_MSG = 4;
     static final int TARGET_TEMPERATURE_CHANGED_MSG = 5;
+    static final int STEP_START_MSG = 6;
+    static final int STEP_TICK_MSG = 7;
 
     private final BrewController brewController = new BrewController();
     private View top;
@@ -34,6 +36,8 @@ public class MashStatus extends AppCompatActivity implements BrewStateChangeList
     private EditText actualTemperature;
     private DecimalInput targetTemperature;
     private DecimalInput heaterPower;
+    private TextView stepTimer;
+    private TextView stepDescription;
 
     private OnCheckedChangeListener brewModeListener = new OnCheckedChangeListener() {
         @Override
@@ -119,6 +123,9 @@ public class MashStatus extends AppCompatActivity implements BrewStateChangeList
             }
         };
 
+        stepTimer = (TextView) findViewById(R.id.stepTimer);
+        stepDescription = (TextView) findViewById(R.id.stepDescription);
+
         // Do brew mode last because it changes other views
         RadioGroup brewMode = (RadioGroup) findViewById(R.id.brewMode);
         brewMode.setOnCheckedChangeListener(brewModeListener);
@@ -154,6 +161,16 @@ public class MashStatus extends AppCompatActivity implements BrewStateChangeList
     }
 
     @Override
+    public void onStepStart(int num, String description) {
+        handler.sendMessage(handler.obtainMessage(STEP_START_MSG, String.format("%d: %s", num, description)));
+    }
+
+    @Override
+    public void onStepTick(int secondsLeft) {
+        handler.sendMessage(handler.obtainMessage(STEP_TICK_MSG, String.format("%02d:%02d", secondsLeft / 60, secondsLeft % 60)));
+    }
+
+    @Override
     public void onTemperatureChanged(double temperature) {
         handler.sendMessage(handler.obtainMessage(TEMPERATURE_CHANGED_MSG));
     }
@@ -185,6 +202,13 @@ public class MashStatus extends AppCompatActivity implements BrewStateChangeList
                     break;
                 case TARGET_TEMPERATURE_CHANGED_MSG:
                     targetTemperature.resetValue();
+                    break;
+                case STEP_START_MSG:
+                    stepDescription.setText((String) msg.obj);
+                    stepTimer.setText("--:--");
+                    break;
+                case STEP_TICK_MSG:
+                    stepTimer.setText((String) msg.obj);
                     break;
             }
         }

@@ -1,5 +1,6 @@
 package org.crpalmer.mashcontroller;
 
+import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -36,6 +37,7 @@ public class BrewController {
     private int currentStepNum = -1;
     private int nextStepNum = -1;
     private BrewStep currentStep;
+    private CountDownTimer stepTimer;
 
     public BrewController() {
         HeaterPowerPredictor rampingPredictor = new RampingHeaterPowerPredictor();
@@ -195,6 +197,31 @@ public class BrewController {
                 }
             } else {
                 currentStep = brewSteps.get(currentStepNum);
+                stepTimer = new CountDownTimer(currentStep.getSeconds() * 1000, 1000) {
+                    private void notifyTimeLeft(int secondsLeft) {
+                        synchronized (listeners) {
+                            for (BrewStateChangeListener listener : listeners) {
+                                listener.onStepTick(secondsLeft);
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onTick(long l) {
+                        notifyTimeLeft((int) (l / 1000));
+                    }
+
+                    @Override
+                    public void onFinish() {
+                        notifyTimeLeft(0);
+                        finishStep();
+                    }
+                };
+                synchronized (listeners) {
+                    for (BrewStateChangeListener listener : listeners) {
+                        listener.onStepStart(currentStepNum, currentStep.getDescription());
+                    }
+                }
                 if (currentStep.startStep(this)) {
                     stepStarted();
                 }
@@ -213,7 +240,6 @@ public class BrewController {
 
     private class LooperThread extends Thread {
         public Handler handler;
-        private int HACK;
 
         public void run() {
             Looper.prepare();
@@ -226,16 +252,12 @@ public class BrewController {
                             break;
                         case START_STEP_MSG:
                             startStep((int) msg.obj);
-                            HACK = 0;
                             break;
                         case IS_STEP_READY_MSG:
                             if (currentStep != null) {
-                                HACK++;
-                                if (currentStep.isStepReady(getTemperature()) || HACK > 5) {
-                                    HACK = 0;
-//                                    startStepTimer();
+                                if (currentStep.isStepReady(getTemperature())) {
+                                    stepTimer.start();
                                     nextStepNum = currentStepNum + 1;
-                                finishStep();
                                 } else {
                                     scheduleIsStepReady();
                                 }

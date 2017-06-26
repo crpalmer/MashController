@@ -8,5 +8,6 @@ public interface BrewStep {
     boolean startStep(BrewController brewController) throws BrewBossConnectionException;
     boolean finishStep(BrewController brewController) throws BrewBossConnectionException;
     boolean isStepReady(double currentTemperature);
+    String getDescription();
     int getSeconds();
 }

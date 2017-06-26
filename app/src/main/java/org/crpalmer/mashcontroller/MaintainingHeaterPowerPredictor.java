@@ -1,5 +1,7 @@
 package org.crpalmer.mashcontroller;
 
+import android.os.CountDownTimer;
+
 /**
  * MaintainingHeaterPowerPredictor
  *
@@ -66,6 +68,16 @@ public class MaintainingHeaterPowerPredictor implements HeaterPowerPredictor, Br
 
     @Override
     public void onPumpChanged(boolean on) {
+    }
+
+    @Override
+    public void onStepStart(int num, String description) {
+
+    }
+
+    @Override
+    public void onStepTick(int secondsLeft) {
+
     }
 
     @Override
