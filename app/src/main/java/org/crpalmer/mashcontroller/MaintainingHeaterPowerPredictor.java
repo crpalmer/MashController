@@ -51,11 +51,14 @@ public class MaintainingHeaterPowerPredictor implements HeaterPowerPredictor, Br
 
     @Override
     public int predict(double currentTemperature) {
+        // TODO: What if we start at the target temperature and then drop??
         if (smoothedMsPerDegree == null) {
             return 0;
         }
 
         double power = 0;
+
+        // TODO: Use the median instead
 
         if (currentTemperature < targetTemperature) {
             power = 100 * (targetTemperature - currentTemperature) * smoothedMsPerDegree / RESTORE_TEMP_MS;
@@ -107,9 +110,13 @@ public class MaintainingHeaterPowerPredictor implements HeaterPowerPredictor, Br
     public void onTemperatureChanged(double temperature, long ms) {
         // TODO: What if the current power is too low and temperature is dropping?  How does this
         // need to accommodate that?
+        // TODO: Specifically, if nothing else we need to update currentTemperature & CTMs
 
         // Only update the estimate when we have done more than 1 degree difference because of the numeric imprecision of the temperature
         if (currentTemperature < temperature && temperatureStartMs > 0) {
+            // TODO: Only skip the update when the pump has cycled off, not just changed temperatures
+            // For example, ramping to 120 it goes to 116 and then changes temp which ignores the 116 -> 117 update, does 117 -> 118 and
+            // the again changes temperature so it ignores 118 -> 119 but does 119 -> 120
             if (temperatureStart+1 < temperature) {
                 updatePrediction(temperature, ms);
             }
