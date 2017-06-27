@@ -83,6 +83,7 @@ public class MaintainingHeaterPowerPredictor implements HeaterPowerPredictor, Br
             heaterStartPower = power;
             temperatureStartMs = System.currentTimeMillis();
             temperatureStart = currentTemperature;
+            currentTemperatureMs = temperatureStartMs;
         }
         wasOn = on;
     }
