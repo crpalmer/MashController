@@ -129,7 +129,7 @@ public class MaintainingHeaterPowerPredictorTest {
         for (int i = 1; i <= 10; i++) {
             p.onTemperatureChanged(140+i, startMs+30000 * i);
         }
-        assertEquals(50/15, p.predict(152));
+        assertEquals((int) Math.ceil(50/15.0), p.predict(152));
     }
 
     @Test

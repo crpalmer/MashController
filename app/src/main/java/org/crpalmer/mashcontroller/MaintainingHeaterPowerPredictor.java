@@ -67,7 +67,7 @@ public class MaintainingHeaterPowerPredictor implements HeaterPowerPredictor, Br
         } else if (currentTemperature == targetTemperature+1) {
             power = 100 * (smoothedMsPerDegree / ONE_HOUR_MS);
         }
-        int powerInt = (int) Math.round(power);
+        int powerInt = (int) Math.ceil(power);
         if (powerInt < 0) return 0;
         else if (powerInt > 100) return 100;
         else return powerInt;
