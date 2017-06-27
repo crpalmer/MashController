@@ -1,6 +1,7 @@
 package org.crpalmer.mashcontroller;
 
 import android.os.CountDownTimer;
+import android.support.annotation.VisibleForTesting;
 
 /**
  * MaintainingHeaterPowerPredictor
@@ -27,7 +28,7 @@ public class MaintainingHeaterPowerPredictor implements HeaterPowerPredictor, Br
     private long temperatureStartMs;
     private double temperatureStart;
     private double currentTemperature;
-    private int smoothedMsPerDegree;
+    private Double smoothedMsPerDegree;
     private double targetTemperature;
 
     public MaintainingHeaterPowerPredictor(BrewController brewController) {
@@ -42,6 +43,10 @@ public class MaintainingHeaterPowerPredictor implements HeaterPowerPredictor, Br
 
     @Override
     public int predict(double currentTemperature) {
+        if (smoothedMsPerDegree == null) {
+            return 0;
+        }
+
         double power;
         if (currentTemperature < targetTemperature) {
             power = 100 * (targetTemperature - currentTemperature) * smoothedMsPerDegree / RESTORE_TEMP_MS;
@@ -84,19 +89,31 @@ public class MaintainingHeaterPowerPredictor implements HeaterPowerPredictor, Br
 
     @Override
     public void onTemperatureChanged(double temperature) {
-        long ms = System.currentTimeMillis();
+        onTemperatureChanged(temperature, System.currentTimeMillis());
+    }
 
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    public void onTemperatureChanged(double temperature, long ms) {
         // TODO: What if the current power is too low and temperature is dropping?  How does this
         // need to accommodate that?
 
         // Only update the estimate when we have done more than 1 degree difference because of the numeric imprecision of the temperature
         if (currentTemperature < temperature && temperatureStartMs > 0 && temperatureStart+1 < temperature) {
             double deltaDegree = (temperature - temperatureStart);
-            long deltaMs = System.currentTimeMillis() - temperatureStartMs;
+            long deltaMs = ms - temperatureStartMs;
             double newMsPerDegree = deltaMs / deltaDegree * 100 / heaterStartPower;
-            smoothedMsPerDegree = (int) Math.round(ALPHA*newMsPerDegree + (1-ALPHA) * smoothedMsPerDegree);
+            if (smoothedMsPerDegree == null) {
+                smoothedMsPerDegree = newMsPerDegree;
+            } else {
+                smoothedMsPerDegree = ALPHA*newMsPerDegree + (1-ALPHA) * smoothedMsPerDegree;
+            }
             currentTemperature = temperature;
         }
+    }
+
+    @VisibleForTesting(otherwise = VisibleForTesting.NONE)
+    public double getMsPerDegree() {
+        return smoothedMsPerDegree != null ? smoothedMsPerDegree : 0;
     }
 
     @Override
