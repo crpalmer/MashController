@@ -43,7 +43,7 @@ public class MashInStep implements BrewStep {
 
     @Override
     public boolean isStepReady(double currentTemperature) {
-        return false;
+        return currentTemperature >= temperature;
     }
 
     @Override
