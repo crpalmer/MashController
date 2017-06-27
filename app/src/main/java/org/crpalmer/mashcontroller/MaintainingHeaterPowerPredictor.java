@@ -23,11 +23,18 @@ public class MaintainingHeaterPowerPredictor implements HeaterPowerPredictor, Br
     private static final int PREDICT_ONE_DEGREE_MS = 60*60*1000;
     private static final int RESTORE_TEMP_MS = 1*60*1000;
 
+    private static final int NUM_OBSERVATIONS = 10;
+
+    private double observations[] = new double[NUM_OBSERVATIONS];
+    private int nObservations;
+    private int nextObservation;
+    private double sumObservations;
     private boolean wasOn;
     private int heaterStartPower;
     private long temperatureStartMs;
     private double temperatureStart;
     private double currentTemperature;
+    private long currentTemperatureMs;
     private Double smoothedMsPerDegree;
     private double targetTemperature;
 
@@ -98,17 +105,32 @@ public class MaintainingHeaterPowerPredictor implements HeaterPowerPredictor, Br
         // need to accommodate that?
 
         // Only update the estimate when we have done more than 1 degree difference because of the numeric imprecision of the temperature
-        if (currentTemperature < temperature && temperatureStartMs > 0 && temperatureStart+1 < temperature) {
-            double deltaDegree = (temperature - temperatureStart);
-            long deltaMs = ms - temperatureStartMs;
-            double newMsPerDegree = deltaMs / deltaDegree * 100 / heaterStartPower;
-            if (smoothedMsPerDegree == null) {
-                smoothedMsPerDegree = newMsPerDegree;
-            } else {
-                smoothedMsPerDegree = ALPHA*newMsPerDegree + (1-ALPHA) * smoothedMsPerDegree;
+        if (currentTemperature < temperature && temperatureStartMs > 0) {
+            if (temperatureStart+1 < temperature) {
+                updatePrediction(temperature, ms);
             }
             currentTemperature = temperature;
+            currentTemperatureMs = ms;
         }
+    }
+
+    private void updatePrediction(double temperature, long ms) {
+        double deltaDegree = (temperature - currentTemperature);
+        long deltaMs = ms - currentTemperatureMs;
+        double newMsPerDegree = deltaMs / deltaDegree * (heaterStartPower / 100.0);
+
+        if (nObservations == NUM_OBSERVATIONS) {
+            sumObservations -= observations[nextObservation];
+        } else {
+            nObservations++;
+        }
+
+        sumObservations += newMsPerDegree;
+        observations[nextObservation] = newMsPerDegree;
+
+        nextObservation = (nextObservation + 1) % NUM_OBSERVATIONS;
+
+        smoothedMsPerDegree = sumObservations / nObservations;
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)

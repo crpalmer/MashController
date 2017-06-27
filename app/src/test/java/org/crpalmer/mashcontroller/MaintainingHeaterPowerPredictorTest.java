@@ -37,11 +37,20 @@ public class MaintainingHeaterPowerPredictorTest {
     }
 
     @Test
-    public void predictsConstantChange() {
+    public void tracksConstantChange() {
         p.start(70, 150);
         p.onHeaterChanged(true, 100);
         p.onTemperatureChanged(71, startMs + 10000);
         p.onTemperatureChanged(72, startMs + 20000);
+        assertEquals(10000, p.getMsPerDegree(), 1);
+    }
+
+    @Test
+    public void accountsForHeaterPowerInEstimate() {
+        p.start(70, 150);
+        p.onHeaterChanged(true, 50);
+        p.onTemperatureChanged(71, startMs + 20000);
+        p.onTemperatureChanged(72, startMs + 40000);
         assertEquals(10000, p.getMsPerDegree(), 1);
     }
 
@@ -70,12 +79,12 @@ public class MaintainingHeaterPowerPredictorTest {
         p.start(70, 150);
         p.onHeaterChanged(true, 100);
         // Predicting 1 degree a second ramp rate
-        for (int i = 0; i < 20; i++) {
+        for (int i = 1; i <= 10; i++) {
             p.onTemperatureChanged(70 + i, startMs + 1000 * i);
         }
         // Should now be close to a 1 degree every 10 seconds ramp rate
-        for (int i = 0; i < 20; i++) {
-            p.onTemperatureChanged(90 + i, startMs + 20000 + i * 10000);
+        for (int i = 1; i <= 9; i++) {
+            p.onTemperatureChanged(80 + i, startMs + 10000 + i * 10000);
         }
         assertEquals(10000, p.getMsPerDegree(), 1000);
     }
@@ -92,4 +101,25 @@ public class MaintainingHeaterPowerPredictorTest {
         p.onTemperatureChanged(90, startMs + 20000 + 10000);
         assertEquals(1000, p.getMsPerDegree(), 1000);
     }
+
+    @Test
+    public void predictsRampingTemperature() {
+        p.start(140, 152);
+        p.onHeaterChanged(true, 100);
+        for (int i = 1; i <= 10; i++) {
+            p.onTemperatureChanged(140+i, startMs+30000 * i);
+        }
+        assertEquals(50, p.predict(151));
+    }
+
+    @Test
+    public void predictsRampingTemperatureAccountingForHeaterPoewr() {
+        p.start(140, 152);
+        p.onHeaterChanged(true, 50);
+        for (int i = 1; i <= 10; i++) {
+            p.onTemperatureChanged(140+i, startMs+60000 * i);
+        }
+        assertEquals(50, p.predict(151));
+    }
+
 }
