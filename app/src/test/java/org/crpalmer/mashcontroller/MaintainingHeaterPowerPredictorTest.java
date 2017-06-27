@@ -103,7 +103,7 @@ public class MaintainingHeaterPowerPredictorTest {
     }
 
     @Test
-    public void predictsRampingTemperature() {
+    public void predictsRampingPower() {
         p.start(140, 152);
         p.onHeaterChanged(true, 100);
         for (int i = 1; i <= 10; i++) {
@@ -113,7 +113,7 @@ public class MaintainingHeaterPowerPredictorTest {
     }
 
     @Test
-    public void predictsRampingTemperatureAccountingForHeaterPoewr() {
+    public void predictsRampingPowerAccountingForHeaterPower() {
         p.start(140, 152);
         p.onHeaterChanged(true, 50);
         for (int i = 1; i <= 10; i++) {
@@ -122,4 +122,33 @@ public class MaintainingHeaterPowerPredictorTest {
         assertEquals(50, p.predict(151));
     }
 
+    @Test
+    public void predictsMaintainingPower() {
+        p.start(140, 152);
+        p.onHeaterChanged(true, 100);
+        for (int i = 1; i <= 10; i++) {
+            p.onTemperatureChanged(140+i, startMs+30000 * i);
+        }
+        assertEquals(50/15, p.predict(152));
+    }
+
+    @Test
+    public void predictsSlightOvershootPower() {
+        p.start(140, 152);
+        p.onHeaterChanged(true, 100);
+        for (int i = 1; i <= 10; i++) {
+            p.onTemperatureChanged(140+i, startMs+30000 * i);
+        }
+        assertEquals(Math.round(50/60.0), p.predict(153));
+    }
+
+    @Test
+    public void noHeaterPowerWhenOvershotTooMuch() {
+        p.start(140, 152);
+        p.onHeaterChanged(true, 100);
+        for (int i = 1; i <= 10; i++) {
+            p.onTemperatureChanged(140+i, startMs+30000 * i);
+        }
+        assertEquals(0, p.predict(154));
+    }
 }

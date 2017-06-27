@@ -20,7 +20,8 @@ import android.support.annotation.VisibleForTesting;
 
 public class MaintainingHeaterPowerPredictor implements HeaterPowerPredictor, BrewStateChangeListener {
     private static final double ALPHA = 0.5;
-    private static final int PREDICT_ONE_DEGREE_MS = 60*60*1000;
+    private static final int AT_TEMP_ONE_DEGREE_MS = 15*60*1000;
+    private static final int ONE_HOUR_MS = 60*60*1000;
     private static final int RESTORE_TEMP_MS = 1*60*1000;
 
     private static final int NUM_OBSERVATIONS = 10;
@@ -54,11 +55,14 @@ public class MaintainingHeaterPowerPredictor implements HeaterPowerPredictor, Br
             return 0;
         }
 
-        double power;
+        double power = 0;
+
         if (currentTemperature < targetTemperature) {
             power = 100 * (targetTemperature - currentTemperature) * smoothedMsPerDegree / RESTORE_TEMP_MS;
-        } else {
-            power = 100 * (smoothedMsPerDegree / PREDICT_ONE_DEGREE_MS);
+        } else if (currentTemperature == targetTemperature) {
+            power = 100 * (smoothedMsPerDegree / AT_TEMP_ONE_DEGREE_MS);
+        } else if (currentTemperature == targetTemperature+1) {
+            power = 100 * (smoothedMsPerDegree / ONE_HOUR_MS);
         }
         int powerInt = (int) Math.round(power);
         if (powerInt < 0) return 0;
