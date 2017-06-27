@@ -17,7 +17,7 @@ public class RampingHeaterPowerPredictor implements HeaterPowerPredictor {
     private double targetTemperature;
 
     @Override
-    public synchronized void start(double targetTemperature) {
+    public synchronized void start(double currentTemperature, double targetTemperature) {
         isMaintaining = false;
         this.targetTemperature = targetTemperature;
     }

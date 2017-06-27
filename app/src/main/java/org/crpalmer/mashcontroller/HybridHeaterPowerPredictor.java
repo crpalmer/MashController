@@ -10,6 +10,7 @@ package org.crpalmer.mashcontroller;
 public class HybridHeaterPowerPredictor implements HeaterPowerPredictor {
     private final HeaterPowerPredictor rampingPredictor;
     private final HeaterPowerPredictor maintainingPredictor;
+    private double targetTemperature;
     private boolean maintaining;
 
     public HybridHeaterPowerPredictor(HeaterPowerPredictor rampingPredictor, HeaterPowerPredictor maintainingPredictor) {
@@ -18,14 +19,18 @@ public class HybridHeaterPowerPredictor implements HeaterPowerPredictor {
     }
 
     @Override
-    public synchronized void start(double targetTemperature) {
+    public synchronized void start(double currentTemperature, double targetTemperature) {
         maintaining = false;
-        rampingPredictor.start(targetTemperature);
-        maintainingPredictor.start(targetTemperature);
+        rampingPredictor.start(currentTemperature, targetTemperature);
+        maintainingPredictor.start(currentTemperature, targetTemperature);
+        this.targetTemperature = targetTemperature;
     }
 
     @Override
     public synchronized int predict(double currentTemperature) {
+        if (currentTemperature >= targetTemperature) {
+            maintaining = true;
+        }
         if (maintaining) return maintainingPredictor.predict(currentTemperature);
         else return rampingPredictor.predict(currentTemperature);
     }

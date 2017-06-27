@@ -19,9 +19,10 @@ import android.os.CountDownTimer;
 
 public class MaintainingHeaterPowerPredictor implements HeaterPowerPredictor, BrewStateChangeListener {
     private static final double ALPHA = 0.5;
-    private static final int PREDICT_ONE_DEGREE_MS = 2*60*60*1000;
+    private static final int PREDICT_ONE_DEGREE_MS = 60*60*1000;
     private static final int RESTORE_TEMP_MS = 1*60*1000;
 
+    private boolean wasOn;
     private int heaterStartPower;
     private long temperatureStartMs;
     private double temperatureStart;
@@ -34,17 +35,18 @@ public class MaintainingHeaterPowerPredictor implements HeaterPowerPredictor, Br
     }
 
     @Override
-    public void start(double targetTemperature) {
+    public void start(double currentTemperature, double targetTemperature) {
         this.targetTemperature = targetTemperature;
+        this.currentTemperature = currentTemperature;
     }
 
     @Override
     public int predict(double currentTemperature) {
         double power;
         if (currentTemperature < targetTemperature) {
-            power = (targetTemperature - currentTemperature) * smoothedMsPerDegree / RESTORE_TEMP_MS;
+            power = 100 * (targetTemperature - currentTemperature) * smoothedMsPerDegree / RESTORE_TEMP_MS;
         } else {
-            power = 100.0 / (smoothedMsPerDegree / PREDICT_ONE_DEGREE_MS);
+            power = 100 * (smoothedMsPerDegree / PREDICT_ONE_DEGREE_MS);
         }
         int powerInt = (int) Math.round(power);
         if (powerInt < 0) return 0;
@@ -58,12 +60,12 @@ public class MaintainingHeaterPowerPredictor implements HeaterPowerPredictor, Br
 
     @Override
     public void onHeaterChanged(boolean on, int power) {
-        if (on && power != heaterStartPower) {
+        if ((on && ! wasOn) || heaterStartPower != power) {
             heaterStartPower = power;
             temperatureStartMs = System.currentTimeMillis();
             temperatureStart = currentTemperature;
         }
-
+        wasOn = on;
     }
 
     @Override
@@ -87,15 +89,14 @@ public class MaintainingHeaterPowerPredictor implements HeaterPowerPredictor, Br
         // TODO: What if the current power is too low and temperature is dropping?  How does this
         // need to accommodate that?
 
-        if (currentTemperature < temperature && temperatureStartMs > 0) {
-            long neWMsPerDegree = ms - temperatureStartMs;
+        // Only update the estimate when we have done more than 1 degree difference because of the numeric imprecision of the temperature
+        if (currentTemperature < temperature && temperatureStartMs > 0 && temperatureStart+1 < temperature) {
             double deltaDegree = (temperature - temperatureStart);
             long deltaMs = System.currentTimeMillis() - temperatureStartMs;
             double newMsPerDegree = deltaMs / deltaDegree * 100 / heaterStartPower;
             smoothedMsPerDegree = (int) Math.round(ALPHA*newMsPerDegree + (1-ALPHA) * smoothedMsPerDegree);
+            currentTemperature = temperature;
         }
-        currentTemperature = temperature;
-        temperatureStartMs = ms;
     }
 
     @Override

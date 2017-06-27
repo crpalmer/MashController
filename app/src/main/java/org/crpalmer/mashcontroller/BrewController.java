@@ -84,7 +84,7 @@ public class BrewController {
         }
         if (targetTemperature != temperature) {
             targetTemperature = temperature;
-            predictor.start(temperature);
+            predictor.start(state.getTemperature(), temperature);
             ensureTemperatureUpdateScheduled();
             synchronized (listeners) {
                 for (BrewStateChangeListener l : listeners) {
@@ -159,8 +159,8 @@ public class BrewController {
     private void updateTemperature() {
         if (state.isAutomaticMode() && targetTemperature > 0) {
             int power = predictor.predict(state.getTemperature());
-            Log.v(TAG, "targetTemperature " + targetTemperature + " power " + power);
-            if (power != state.getHeaterPower()) {
+            Log.v(TAG, "targetTemperature " + targetTemperature + " power " + power + " currentTemperate " + state.getTemperature());
+            if (! state.isHeaterOn() || power != state.getHeaterPower()) {
                 try {
                     connection.setHeaterPower(power);
                 } catch (BrewBossConnectionException e) {
