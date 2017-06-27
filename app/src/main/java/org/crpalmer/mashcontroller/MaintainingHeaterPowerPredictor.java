@@ -1,7 +1,8 @@
 package org.crpalmer.mashcontroller;
 
-import android.os.CountDownTimer;
 import android.support.annotation.VisibleForTesting;
+
+import java.util.Arrays;
 
 /**
  * MaintainingHeaterPowerPredictor
@@ -29,14 +30,13 @@ public class MaintainingHeaterPowerPredictor implements HeaterPowerPredictor, Br
     private double observations[] = new double[NUM_OBSERVATIONS];
     private int nObservations;
     private int nextObservation;
-    private double sumObservations;
     private boolean wasOn;
     private int heaterStartPower;
     private long temperatureStartMs;
     private double temperatureStart;
     private double currentTemperature;
     private long currentTemperatureMs;
-    private Double smoothedMsPerDegree;
+    private Double medianMsPerDegree;
     private double targetTemperature;
 
     public MaintainingHeaterPowerPredictor(BrewController brewController) {
@@ -52,20 +52,18 @@ public class MaintainingHeaterPowerPredictor implements HeaterPowerPredictor, Br
     @Override
     public int predict(double currentTemperature) {
         // TODO: What if we start at the target temperature and then drop??
-        if (smoothedMsPerDegree == null) {
+        if (medianMsPerDegree == null) {
             return 0;
         }
 
         double power = 0;
 
-        // TODO: Use the median instead
-
         if (currentTemperature < targetTemperature) {
-            power = 100 * (targetTemperature - currentTemperature) * smoothedMsPerDegree / RESTORE_TEMP_MS;
+            power = 100 * (targetTemperature - currentTemperature) * medianMsPerDegree / RESTORE_TEMP_MS;
         } else if (currentTemperature == targetTemperature) {
-            power = 100 * (smoothedMsPerDegree / AT_TEMP_ONE_DEGREE_MS);
+            power = 100 * (medianMsPerDegree / AT_TEMP_ONE_DEGREE_MS);
         } else if (currentTemperature == targetTemperature+1) {
-            power = 100 * (smoothedMsPerDegree / ONE_HOUR_MS);
+            power = 100 * (medianMsPerDegree / ONE_HOUR_MS);
         }
         int powerInt = (int) Math.ceil(power);
         if (powerInt < 0) return 0;
@@ -131,23 +129,26 @@ public class MaintainingHeaterPowerPredictor implements HeaterPowerPredictor, Br
         long deltaMs = ms - currentTemperatureMs;
         double newMsPerDegree = deltaMs / deltaDegree * (heaterStartPower / 100.0);
 
-        if (nObservations == NUM_OBSERVATIONS) {
-            sumObservations -= observations[nextObservation];
-        } else {
+        if (nObservations < NUM_OBSERVATIONS) {
             nObservations++;
         }
 
-        sumObservations += newMsPerDegree;
         observations[nextObservation] = newMsPerDegree;
-
         nextObservation = (nextObservation + 1) % NUM_OBSERVATIONS;
 
-        smoothedMsPerDegree = sumObservations / nObservations;
+        double[] sorted = observations.clone();
+        Arrays.sort(sorted, 0, nObservations - 1);
+        int mid = nObservations/2;
+        if (nObservations % 2 == 1) {
+            medianMsPerDegree = sorted[mid];
+        } else {
+            medianMsPerDegree = (sorted[mid-1] + sorted[mid]) / 2.0;
+        }
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)
     public double getMsPerDegree() {
-        return smoothedMsPerDegree != null ? smoothedMsPerDegree : 0;
+        return medianMsPerDegree != null ? medianMsPerDegree : 0;
     }
 
     @Override
