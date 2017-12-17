@@ -42,7 +42,7 @@ public class BrewController {
     public BrewController() {
         HeaterPowerPredictor rampingPredictor = new RampingHeaterPowerPredictor();
         HeaterPowerPredictor maintainingPredictor = new MaintainingHeaterPowerPredictor(this);
-        predictor = new HybridHeaterPowerPredictor(rampingPredictor, maintainingPredictor);
+        predictor = new HybridHeaterPowerPredictor(rampingPred`ictor, maintainingPredictor);
         looperThread.start();
     }
 

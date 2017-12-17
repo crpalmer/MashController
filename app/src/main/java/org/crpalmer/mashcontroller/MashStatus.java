@@ -1,17 +1,22 @@
 package org.crpalmer.mashcontroller;
 
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.text.InputType;
+import android.util.TypedValue;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.RadioGroup;
 import android.widget.RadioGroup.OnCheckedChangeListener;
 import android.widget.TextView;
@@ -33,7 +38,7 @@ public class MashStatus extends AppCompatActivity implements BrewStateChangeList
     private TextView connectionStatus;
     private BrewButton pumpButton;
     private BrewButton heaterButton;
-    private EditText actualTemperature;
+    private TextView actualTemperature;
     private DecimalInput targetTemperature;
     private DecimalInput heaterPower;
     private TextView stepTimer;
@@ -83,9 +88,9 @@ public class MashStatus extends AppCompatActivity implements BrewStateChangeList
         });
 
         connectionStatus = (TextView) findViewById(R.id.connectionStatus);
-        actualTemperature = (EditText) findViewById(R.id.actualTemperature);
+        actualTemperature = (TextView) findViewById(R.id.actualTemperature);
 
-        targetTemperature = new DecimalInput(R.id.targetTemperature, R.id.targetTempOkay, R.id.targetTempCancel) {
+        targetTemperature = new DecimalInput(R.id.targetTemperature, R.string.target_temperature) {
             @Override
             public void onValueChanged(double value) {
                 brewController.setTargetTemperature(value);
@@ -97,7 +102,7 @@ public class MashStatus extends AppCompatActivity implements BrewStateChangeList
             }
         };
 
-        heaterPower = new DecimalInput(R.id.heaterPower, R.id.heaterPowerOkay, R.id.heaterPowerCancel) {
+        heaterPower = new DecimalInput(R.id.heaterPower, R.string.heater) {
             @Override
             public void onValueChanged(double value) throws BrewBossConnectionException {
                 brewController.setHeaterPower((int) Math.round(value));
@@ -134,7 +139,8 @@ public class MashStatus extends AppCompatActivity implements BrewStateChangeList
         brewController.addStateChangeListener(this);
 
         try {
-            brewController.loadBrewXml(new File("/sdcard/Download/a-beer-only-chris-and-carrie-could-love.xml"));
+            // brewController.loadBrewXml(new File("/sdcard/Download/a-beer-only-chris-and-carrie-could-love.xml"));
+            brewController.loadBrewXml(new File("/sdcard/test-brew.xml"));
         } catch (XmlException | FileNotFoundException e) {
             App.toastException(e);
         }
@@ -215,59 +221,71 @@ public class MashStatus extends AppCompatActivity implements BrewStateChangeList
     };
 
     private abstract class DecimalInput {
-        private EditText editText;
-        private ImageButton okayButton;
-        private ImageButton cancelButton;
+        private TextView value;
+        private String title;
 
-        public DecimalInput(int editTextId, int okayButtonId, int cancelButtonId) {
-            editText = (EditText) findViewById(editTextId);
-            okayButton = (ImageButton) findViewById(okayButtonId);
-            cancelButton = (ImageButton) findViewById(cancelButtonId);
+        public DecimalInput(int valueId, int titleStringId) {
+            value = (TextView) findViewById(valueId);
+            title = getString(titleStringId);
 
-            okayButton.setVisibility(View.INVISIBLE);
-            cancelButton.setVisibility(View.INVISIBLE);
-
-            editText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            value.setOnFocusChangeListener(new View.OnFocusChangeListener() {
                 @Override
-                public void onFocusChange(View view, boolean focussed) {
-                    if (!focussed) {
-                        resetValue();
+                public void onFocusChange(View view, boolean b) {
+                    if (b) {
+                        top.requestFocus();
                     }
-                    okayButton.setVisibility(focussed ? View.VISIBLE : View.INVISIBLE);
-                    cancelButton.setVisibility(focussed ? View.VISIBLE : View.INVISIBLE);
                 }
             });
-            editText.setText(getCurrentValue());
-
-            okayButton.setOnClickListener(new View.OnClickListener() {
+            value.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    try {
-                        onValueChanged(Double.valueOf(editText.getText().toString()));
-                    } catch (IllegalArgumentException | BrewBossConnectionException e) {
-                        App.toastException(e);
-                    }
-                    top.requestFocus();
+                    AlertDialog.Builder builder = new AlertDialog.Builder(MashStatus.this);
+                    builder.setTitle(title);
+                    final EditText input = new EditText(MashStatus.this);
+                    input.setInputType(InputType.TYPE_CLASS_NUMBER);
+                    input.setRawInputType(Configuration.KEYBOARD_12KEY);
+                    float pixels = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 100, getResources().getDisplayMetrics());
+                    input.setWidth((int) pixels);
+                    input.setText(getCurrentValue());
+                    builder.setView(input);
+                    builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            try {
+                                onValueChanged(Double.valueOf(input.getText().toString()));
+                            } catch (IllegalArgumentException | BrewBossConnectionException e) {
+                                App.toastException(e);
+                            }
+                        }
+                    });
+                    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            resetValue();
+                        }
+                    });
+                    final AlertDialog dialog = builder.create();
+                    dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                        @Override
+                        public void onDismiss(DialogInterface dialogInterface) {
+                            dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
+                        }
+                    });
+                    dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+                    dialog.show();
+                    input.requestFocus();
                 }
             });
-
-            cancelButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    resetValue();
-                    top.requestFocus();
-                }
-            });
+            value.setText(getCurrentValue());
         }
 
         private void resetValue() {
-            editText.setText(getCurrentValue());
+            value.setText(getCurrentValue());
         }
 
         private void setEnabled(boolean enabled) {
-            editText.setFocusable(enabled);
-            editText.setFocusableInTouchMode(enabled);
-            editText.setBackgroundColor(enabled ? Color.TRANSPARENT : Color.LTGRAY);
+            value.setClickable(enabled);
+            value.setBackgroundColor(enabled ? Color.TRANSPARENT : Color.LTGRAY);
         }
 
         public abstract void onValueChanged(double value) throws BrewBossConnectionException;
